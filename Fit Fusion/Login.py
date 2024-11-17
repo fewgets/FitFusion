@@ -1,10 +1,9 @@
 import sys
 import sqlite3
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QStackedWidget, \
-    QTabWidget
+    QTabWidget, QSizePolicy, QHBoxLayout
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QBrush, QPalette
-
 
 class LoginSignupApp(QWidget):
     def __init__(self):
@@ -17,6 +16,25 @@ class LoginSignupApp(QWidget):
         self.setLayout(QVBoxLayout())
         self.layout().addWidget(self.central_widget)
 
+        # Add back and forward buttons
+        self.back_button = QPushButton("Back")
+        self.forward_button = QPushButton("Forward")
+
+        # Connect buttons to their respective functions
+        self.back_button.clicked.connect(self.go_back)
+        self.forward_button.clicked.connect(self.go_forward)
+
+        # Add buttons to the layout
+        button_layout = QVBoxLayout()
+        button_layout.addWidget(self.back_button)
+        button_layout.addWidget(self.forward_button)
+
+        self.layout().addLayout(button_layout)
+
+        # Initialize history stack
+        self.history = []
+        self.current_index = -1
+
         self.init_main_ui()
         self.init_login_ui()
         self.init_signup_ui()
@@ -24,6 +42,30 @@ class LoginSignupApp(QWidget):
         self.init_welcome_ui()
 
         self.central_widget.setCurrentIndex(0)  # Start with the main UI
+        self.add_to_history(0)  # Add main UI to history
+
+    def add_to_history(self, index):
+        """Add the current index to the history."""
+        # Remove forward history if we are navigating back
+        if self.current_index + 1 < len(self.history):
+            self.history = self.history[:self.current_index + 1]
+
+        self.history.append(index)
+        self.current_index += 1
+
+    def go_back(self):
+        """Navigate to the previous view."""
+        if self.current_index > 0:
+            self.current_index -= 1
+            self.central_widget.setCurrentIndex(self.history[self.current_index])
+
+
+    def go_forward(self):
+        """Navigate to the next view."""
+        if self.current_index < len(self.history) - 1:
+            self.current_index += 1
+            self.central_widget.setCurrentIndex(self.history[self.current_index])
+
 
     def init_main_ui(self):
         """Initial window with Register Here options (Login/Signup)"""
@@ -42,29 +84,40 @@ class LoginSignupApp(QWidget):
         # Buttons for Login and Signup with modern styles
         btn_login = QPushButton('Login', self)
         btn_login.setStyleSheet("""
-            background-color: #4CAF50;
-            font-size: 30px;
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 20px;
-        """)
-        btn_login.clicked.connect(lambda: self.central_widget.setCurrentIndex(1))  # Switch to login
+                background-color: #4CAF50;
+                font-size: 30px;
+                color: white;
+                padding: 20px;
+                border-radius: 10px;
+                margin-top: 20px;
+            """)
+        btn_login.clicked.connect(lambda: self.switch_to_login())  # Switch to login
         main_layout.addWidget(btn_login)
 
         btn_signup = QPushButton('Signup', self)
         btn_signup.setStyleSheet("""
-            background-color: #2196F3;
-            font-size: 30px;
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 20px;
-        """)
-        btn_signup.clicked.connect(lambda: self.central_widget.setCurrentIndex(2))  # Switch to signup
+                background-color: #2196F3;
+                font-size: 30px;
+                color: white;
+                padding: 20px;
+                border-radius: 10px;
+                margin-top: 20px;
+            """)
+        btn_signup.clicked.connect(lambda: self.switch_to_signup())  # Switch to signup
         main_layout.addWidget(btn_signup)
 
         self.central_widget.addWidget(main_widget)
+
+
+    def switch_to_login(self):
+        self.central_widget.setCurrentIndex(1)  # Switch to login
+        self.add_to_history(1)  # Add login UI to history
+
+
+    def switch_to_signup(self):
+        self.central_widget.setCurrentIndex(2)  # Switch to signup
+        self.add_to_history(2)  # Add signup UI to history
+
 
     def init_login_ui(self):
         """Login UI with enhanced interaction"""
@@ -78,12 +131,12 @@ class LoginSignupApp(QWidget):
 
         self.login_email = QLineEdit(self)
         self.login_email.setStyleSheet("""
-            font-size: 25px;
-            padding: 15px;
-            border: 2px solid #444444;
-            border-radius: 5px;
-            background-color: #f1f1f1;
-        """)
+                font-size: 25px;
+                padding: 15px;
+                border: 2px solid #444444;
+                border-radius: 5px;
+                background-color: #f1f1f1;
+            """)
         self.login_email.setPlaceholderText("Enter your email")
         layout.addWidget(self.login_email)
 
@@ -93,12 +146,12 @@ class LoginSignupApp(QWidget):
 
         self.login_password = QLineEdit(self)
         self.login_password.setStyleSheet("""
-            font-size: 25px;
-            padding: 15px;
-            border: 2px solid #444444;
-            border-radius: 5px;
-            background-color: #f1f1f1;
-        """)
+                font-size: 25px;
+                padding: 15px;
+                border: 2px solid #444444;
+                border-radius: 5px;
+                background-color: #f1f1f1;
+            """)
         self.login_password.setEchoMode(QLineEdit.Password)
         self.login_password.setPlaceholderText("Enter your password")
         layout.addWidget(self.login_password)
@@ -109,6 +162,7 @@ class LoginSignupApp(QWidget):
         forgot_password_link.setOpenExternalLinks(True)  # Make the link clickable
         forgot_password_link.mousePressEvent = self.open_forgot_password_window
         layout.addWidget(forgot_password_link)
+
         # Feedback label
         self.login_feedback = QLabel("", self)
         self.login_feedback.setStyleSheet("font-size: 25px; color: red;")
@@ -117,19 +171,20 @@ class LoginSignupApp(QWidget):
         # Login button with animation and feedback
         btn_login = QPushButton("Login", self)
         btn_login.setStyleSheet("""
-                background-color: #2E3B4E;
-                font-size: 25px;
-                color: white;
-                padding: 15px;
-                border-radius: 8px;
-                margin-top: 20px;
-                font-weight: bold;
-            """)
+                    background-color: #2E3B4E;
+                    font-size: 25px;
+                    color: white;
+                    padding: 15px;
+                    border-radius:  8px;
+                    margin-top: 20px;
+                    font-weight: bold;
+                """)
         btn_login.setCursor(Qt.PointingHandCursor)  # Change cursor on hover for better interaction
         btn_login.clicked.connect(self.on_login_button_click)
         layout.addWidget(btn_login)
 
         self.central_widget.addWidget(login_widget)
+
 
     def on_login_button_click(self):
         """Triggered when the login button is clicked."""
@@ -147,6 +202,7 @@ class LoginSignupApp(QWidget):
         # Proceed with checking credentials
         self.login_feedback.setText("")  # Clear previous feedback
         self.login_database()
+
 
     def login_database(self):
         """Check credentials in the database for login"""
@@ -168,9 +224,12 @@ class LoginSignupApp(QWidget):
             self.login_feedback.setStyleSheet("font-size: 25px; color: red;")
             self.login_feedback.setText("Incorrect email or password.")
 
+
     def open_forgot_password_window(self, event):
         """Open the forgot password dialog"""
         self.central_widget.setCurrentIndex(3)  # Switch to forgot password UI
+        self.add_to_history(3)  # Add forgot password UI to history
+
 
     def init_forgot_password_ui(self):
         """Forgot Password UI"""
@@ -184,26 +243,26 @@ class LoginSignupApp(QWidget):
 
         self.forgot_email = QLineEdit(self)
         self.forgot_email.setStyleSheet("""
-                font-size: 25px;
-                padding: 15px;
-                border: 2px solid #444444;
-                border-radius: 5px;
-                background-color: #f1f1f1;
-            """)
+                    font-size: 25px;
+                    padding: 15px;
+                    border: 2px solid #444444;
+                    border-radius: 5px;
+                    background-color: #f1f1f1;
+                """)
         self.forgot_email.setPlaceholderText("Enter your email")
         layout.addWidget(self.forgot_email)
 
         # Submit button for password reset
         btn_reset = QPushButton("Reset Password", self)
         btn_reset.setStyleSheet("""
-                background-color: #2E3B4E;
-                font-size: 25px;
-                color: white;
-                padding: 15px;
-                border-radius: 8px;
-                margin-top: 20px;
-                font-weight: bold;
-            """)
+                    background-color: #2E3B4E;
+                    font-size: 25px;
+                    color: white;
+                    padding: 15px;
+                    border-radius: 8px;
+                    margin-top: 20px;
+                    font-weight: bold;
+                """)
         btn_reset.clicked.connect(self.reset_password)
         layout.addWidget(btn_reset)
 
@@ -213,6 +272,7 @@ class LoginSignupApp(QWidget):
         layout.addWidget(self.forgot_password_feedback)
 
         self.central_widget.addWidget(forgot_widget)
+
 
     def reset_password(self):
         """Simulate password reset process (for now just a placeholder)"""
@@ -225,6 +285,8 @@ class LoginSignupApp(QWidget):
         # Here, you would typically connect to a password reset process, e.g. sending an email.
         self.forgot_password_feedback.setText("Password reset instructions sent to your email!")
         self.central_widget.setCurrentIndex(0)  # Go back to main UI after reset
+        self.add_to_history(0)  # Add main UI to history
+
 
     def init_signup_ui(self):
         # Signup UI
@@ -232,7 +294,7 @@ class LoginSignupApp(QWidget):
         layout = QVBoxLayout(signup_widget)
 
         # Signup Form UI with Custom Styling
-        name_label = QLabel("User  Name: ", self)
+        name_label = QLabel("User   Name: ", self)
         name_label.setStyleSheet("font-size: 30px; color: #333333;")
         layout.addWidget(name_label)
 
@@ -240,7 +302,7 @@ class LoginSignupApp(QWidget):
         self.signup_name.setStyleSheet("font-size: 25px; padding: 10px; border-radius: 5px;")
         layout.addWidget(self.signup_name)
 
-        email_label = QLabel("User  Email: ", self)
+        email_label = QLabel("User    Email: ", self)
         email_label.setStyleSheet("font-size: 30px; color: #333333;")
         layout.addWidget(email_label)
 
@@ -265,17 +327,18 @@ class LoginSignupApp(QWidget):
         # Sign up button
         btn_signup = QPushButton("Signup", self)
         btn_signup.setStyleSheet("""
-                background-color: #2196F3;
-                font-size: 25px;
-                color: white;
-                padding: 15px;
-                border-radius: 10px;
-                margin-top: 20px;
-            """)
+                    background-color: #2196F3;
+                    font-size: 25px;
+                    color: white;
+                    padding: 15px;
+                    border-radius: 10px;
+                    margin-top: 20px;
+                """)
         btn_signup.clicked.connect(self.signup_database)
         layout.addWidget(btn_signup)
 
         self.central_widget.addWidget(signup_widget)
+
 
     def signup_database(self):
         """Handle database actions for signup"""
@@ -301,6 +364,8 @@ class LoginSignupApp(QWidget):
         self.signup_email.clear()
         self.signup_password.clear()
         self.central_widget.setCurrentIndex(0)  # Go back to main UI
+        self.add_to_history(0)  # Add main UI to history
+
 
     def init_welcome_ui(self):
         """Show a welcome frame after successful login"""
@@ -316,23 +381,27 @@ class LoginSignupApp(QWidget):
         # Logout button with modern style
         btn_logout = QPushButton("Logout", self)
         btn_logout.setStyleSheet("""
-                background-color: #FF5722;
-                font-size: 25px;
-                color: white;
-                padding: 15px;
-                border-radius: 10px;
-                margin-top: 20px;
-            """)
+                    background-color: #FF5722;
+                    font-size: 25px;
+                    color: white;
+                    padding: 15px;
+                    border-radius: 10px;
+                    margin-top: 20px;
+                """)
         btn_logout.clicked.connect(self.logout)
         layout.addWidget(btn_logout)
 
         self.central_widget.addWidget(welcome_widget)
 
+
     def show_welcome_frame(self, user_name):
         """Show welcome message and initialize tabs after successful login"""
         self.central_widget.setCurrentIndex(5)  # Switch to a new index for tabs
         self.init_tabs(user_name)  # Initialize tabs
+        self.add_to_history(5)  # Add tabs UI to history
 
+
+    # Ensure that the labels resize dynamically
     def init_tabs(self, user_name):
         """Initialize the tabbed interface after login"""
         tabs_widget = QWidget()
@@ -369,10 +438,10 @@ class LoginSignupApp(QWidget):
             }
         """)
 
-        self.tabs.setElideMode(Qt.ElideNone)  # Ensure full text visibility
-        self.tabs.setTabPosition(QTabWidget.North)  # Adjust if needed
-        self.tabs.setUsesScrollButtons(True)  # Enable scroll if tabs overflow
+        # Allow tabs to expand with window size
+        self.tabs.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
+        # Add the QTabWidget to the layout
         tabs_layout.addWidget(self.tabs)
 
         # Create tabs
@@ -386,15 +455,53 @@ class LoginSignupApp(QWidget):
         self.central_widget.addWidget(tabs_widget)
         self.central_widget.setCurrentWidget(tabs_widget)  # Show the tabs widget
 
+        # Use stretch to ensure resizing affects tab size properly
+        tabs_layout.setStretch(0, 1)  # Allow the tab widget to stretch
+
     def create_workout_planner_tab(self):
         """Create the Workout Planner tab"""
         workout_tab = QWidget()
         layout = QVBoxLayout(workout_tab)
 
+        # Create a label
         label = QLabel("Workout Planner", self)
+        label.setAlignment(Qt.AlignCenter)  # Center the label
         label.setStyleSheet("font-size: 30px; font-weight: bold; color: white;")  # Set text color to white
         layout.addWidget(label)
 
+        # Create resizable buttons
+        button_back = QPushButton("Back", self)
+        button_forward = QPushButton("Forward", self)
+
+        # Set size policy for buttons
+        button_back.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        button_forward.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+        # Style buttons for visibility
+        button_back.setStyleSheet("""
+            background-color: #4CAF50;
+            color: white;
+            font-size: 16px;
+            padding: 10px;
+            border-radius: 5px;
+        """)
+        button_forward.setStyleSheet("""
+            background-color: #4CAF50;
+            color: white;
+            font-size: 16px;
+            padding: 10px;
+            border-radius: 5px;
+        """)
+
+        # Add buttons to a horizontal layout
+        button_layout = QHBoxLayout()
+        button_layout.addWidget(button_back)
+        button_layout.addWidget(button_forward)
+
+        # Add the button layout to the main layout
+        layout.addLayout(button_layout)
+
+        # Add the layout to the tab
         self.tabs.addTab(workout_tab, "Workouts")
 
     def create_streak_tab(self):
@@ -402,10 +509,46 @@ class LoginSignupApp(QWidget):
         streak_tab = QWidget()
         layout = QVBoxLayout(streak_tab)
 
+        # Create a label
         label = QLabel("Streak Tracker", self)
-        label.setStyleSheet("font-size: 30px; font-weight: bold; color: white;")  # Set text color to white
+        label.setAlignment(Qt.AlignCenter)
+        label.setStyleSheet("font-size: 30px; font-weight: bold; color: white;")
         layout.addWidget(label)
 
+        # Create resizable buttons
+        button_reset = QPushButton("Reset Streak", self)
+        button_view = QPushButton("View Progress", self)
+
+
+        # Set size policy for buttons
+        button_reset.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        button_view.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+        # Style buttons
+        button_reset.setStyleSheet("""
+            background-color: #4CAF50;
+            color: white;
+            font-size: 16px;
+            padding: 10px;
+            border-radius: 5px;
+        """)
+        button_view.setStyleSheet("""
+            background-color: #4CAF50;
+            color: white;
+            font-size: 16px;
+            padding: 10px;
+            border-radius: 5px;
+        """)
+
+        # Add buttons to a horizontal layout
+        button_layout = QHBoxLayout()
+        button_layout.addWidget(button_reset)
+        button_layout.addWidget(button_view)
+
+        # Add the button layout to the main layout
+        layout.addLayout(button_layout)
+
+        # Add the layout to the tab
         self.tabs.addTab(streak_tab, "Streak")
 
     def create_bmi_visualization_tab(self):
@@ -413,10 +556,45 @@ class LoginSignupApp(QWidget):
         bmi_tab = QWidget()
         layout = QVBoxLayout(bmi_tab)
 
+        # Create a label
         label = QLabel("BMI Visualization", self)
-        label.setStyleSheet("font-size: 30px; font-weight: bold; color: white;")  # Set text color to white
+        label.setAlignment(Qt.AlignCenter)
+        label.setStyleSheet("font-size: 30px; font-weight: bold; color: white;")
         layout.addWidget(label)
 
+        # Create resizable buttons
+        button_calculate = QPushButton("Calculate BMI", self)
+        button_view_chart = QPushButton("View Chart", self)
+
+        # Set size policy for buttons
+        button_calculate.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        button_view_chart.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+        # Style buttons
+        button_calculate.setStyleSheet("""
+            background-color: #4CAF50;
+            color: white;
+            font-size: 16px;
+            padding: 10px;
+            border-radius: 5px;
+        """)
+        button_view_chart.setStyleSheet("""
+            background-color: #4CAF50;
+            color: white;
+            font-size: 16px;
+            padding: 10px;
+            border-radius: 5px;
+        """)
+
+        # Add buttons to a horizontal layout
+        button_layout = QHBoxLayout()
+        button_layout.addWidget(button_calculate)
+        button_layout.addWidget(button_view_chart)
+
+        # Add the button layout to the main layout
+        layout.addLayout(button_layout)
+
+        # Add the layout to the tab
         self.tabs.addTab(bmi_tab, "BMI")
 
     def create_meal_planner_tab(self):
@@ -424,10 +602,45 @@ class LoginSignupApp(QWidget):
         meal_tab = QWidget()
         layout = QVBoxLayout(meal_tab)
 
+        # Create a label
         label = QLabel("Meal Planner", self)
-        label.setStyleSheet("font-size: 30px; font-weight: bold; color: white;")  # Set text color to white
+        label.setAlignment(Qt.AlignCenter)
+        label.setStyleSheet("font-size: 30px; font-weight: bold; color: white;")
         layout.addWidget(label)
 
+        # Create resizable buttons
+        button_add_meal = QPushButton("Add Meal", self)
+        button_view_plan = QPushButton("View Plan", self)
+
+        # Set size policy for buttons
+        button_add_meal.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        button_view_plan.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+        # Style buttons
+        button_add_meal.setStyleSheet("""
+            background-color: #4CAF50;
+            color: white;
+            font-size: 16px;
+            padding: 10px;
+            border-radius: 5px;
+        """)
+        button_view_plan.setStyleSheet("""
+            background-color: #4CAF50;
+            color: white;
+            font-size: 16px;
+            padding: 10px;
+            border-radius: 5px;
+        """)
+
+        # Add buttons to a horizontal layout
+        button_layout = QHBoxLayout()
+        button_layout.addWidget(button_add_meal)
+        button_layout.addWidget(button_view_plan)
+
+        # Add the button layout to the main layout
+        layout.addLayout(button_layout)
+
+        # Add the layout to the tab
         self.tabs.addTab(meal_tab, "Meal Planner")
 
     def create_customer_service_tab(self):
@@ -435,15 +648,51 @@ class LoginSignupApp(QWidget):
         service_tab = QWidget()
         layout = QVBoxLayout(service_tab)
 
+        # Create a label
         label = QLabel("Customer Service", self)
-        label.setStyleSheet("font-size: 30px; font-weight: bold; color: white;")  # Set text color to white
+        label.setAlignment(Qt.AlignCenter)
+        label.setStyleSheet("font-size: 30px; font-weight: bold; color: white;")
         layout.addWidget(label)
 
-        self.tabs.addTab(service_tab, "Help")
+        # Create resizable buttons
+        button_contact_support = QPushButton("Contact Support", self)
+        button_faq = QPushButton("FAQ", self)
 
+        # Set size policy for buttons
+        button_contact_support.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        button_faq.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+        # Style buttons
+        button_contact_support.setStyleSheet("""
+            background-color: #4CAF50;
+            color: white;
+            font-size: 16px;
+            padding: 10px;
+            border-radius: 5px;
+        """)
+        button_faq.setStyleSheet("""
+            background-color: #4CAF50;
+            color: white;
+            font-size: 16px;
+            padding: 10px;
+            border-radius: 5px;
+        """)
+
+        # Add buttons to a horizontal layout
+        button_layout = QHBoxLayout()
+        button_layout.addWidget(button_contact_support)
+        button_layout.addWidget(button_faq)
+
+        # Add the button layout to the main layout
+        layout.addLayout(button_layout)
+
+        # Add the layout to the tab
+        self.tabs.addTab(service_tab, "Help")
     def logout(self):
         """Logout function - Close the welcome window and return to the main window"""
         self.central_widget.setCurrentIndex(0)  # Go back to main UI
+        self.add_to_history(0)  # Add main UI to history
+
 
     def set_background_image(self, image_path):
         """Set a background image for the window."""
@@ -456,6 +705,7 @@ class LoginSignupApp(QWidget):
         palette = QPalette()
         palette.setBrush(QPalette.Window, QBrush(pixmap))
         self.setPalette(palette)
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
