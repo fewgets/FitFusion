@@ -1,6 +1,7 @@
 import sys
 import sqlite3
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QStackedWidget
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QStackedWidget, \
+    QTabWidget
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QBrush, QPalette
 
@@ -328,10 +329,126 @@ class LoginSignupApp(QWidget):
         self.central_widget.addWidget(welcome_widget)
 
     def show_welcome_frame(self, user_name):
-        """Show welcome message"""
-        self.welcome_msg.setText(f"Welcome, {user_name}!")
-        self.central_widget.setCurrentIndex(4)  # Switch to welcome UI
+        """Show welcome message and initialize tabs after successful login"""
+        self.central_widget.setCurrentIndex(5)  # Switch to a new index for tabs
+        self.init_tabs(user_name)  # Initialize tabs
 
+    def init_tabs(self, user_name):
+        """Initialize the tabbed interface after login"""
+        tabs_widget = QWidget()
+        tabs_layout = QVBoxLayout(tabs_widget)
+
+        # Create QTabWidget
+        self.tabs = QTabWidget()
+
+        # Apply the updated style sheet for colorful and fitting tab buttons
+        self.tabs.setStyleSheet("""
+            QTabBar::tab {
+                background-color: #4CAF50;  /* Green background */
+                color: white;               /* White text */
+                font-size: 14px;            /* Font size */
+                padding: 10px 25px;         /* Ensure proper padding for better visibility */
+                border: 1px solid #ccc;     /* Border around tabs */
+                border-bottom: none;        /* Smooth look */
+                border-radius: 4px;         /* Rounded corners */
+                min-width: 100px;           /* Minimum width to prevent truncation */
+            }
+
+            QTabBar::tab:selected {
+                background-color: #45a049;  /* Darker green for selected tab */
+                font-weight: bold;          /* Bold text for selected tab */
+            }
+
+            QTabBar::tab:hover {
+                background-color: #66bb6a;  /* Lighter green on hover */
+            }
+
+            QTabWidget::pane {
+                border: 1px solid #ccc;     /* Border around tab content */
+                border-top: none;           /* Merge content with tabs */
+            }
+        """)
+
+        self.tabs.setElideMode(Qt.ElideNone)  # Ensure full text visibility
+        self.tabs.setTabPosition(QTabWidget.North)  # Adjust if needed
+        self.tabs.setUsesScrollButtons(True)  # Enable scroll if tabs overflow
+
+        tabs_layout.addWidget(self.tabs)
+
+        # Create tabs
+        self.create_workout_planner_tab()
+        self.create_streak_tab()
+        self.create_bmi_visualization_tab()
+        self.create_meal_planner_tab()
+        self.create_customer_service_tab()
+
+        # Set the tabs widget as the central widget
+        self.central_widget.addWidget(tabs_widget)
+        self.central_widget.setCurrentWidget(tabs_widget)  # Show the tabs widget
+    def create_workout_planner_tab(self):
+            """Create the Workout Planner tab"""
+            workout_tab = QWidget()
+            layout = QVBoxLayout(workout_tab)
+
+            label = QLabel("Workout Planner", self)
+            label.setStyleSheet("font-size: 30px; font-weight: bold;")
+            layout.addWidget(label)
+
+            # Add more widgets for the workout planner functionality here
+
+            self.tabs.addTab(workout_tab, "Workouts")
+
+    def create_streak_tab(self):
+        """Create the Streak tab"""
+        streak_tab = QWidget()
+        layout = QVBoxLayout(streak_tab)
+
+        label = QLabel("Streak Tracker", self)
+        label.setStyleSheet("font-size: 30px; font-weight: bold;")
+        layout.addWidget(label)
+
+        # Add more widgets for the streak tracking functionality here
+
+        self.tabs.addTab(streak_tab, "Streak")
+
+    def create_bmi_visualization_tab(self):
+        """Create the BMI Visualization tab"""
+        bmi_tab = QWidget()
+        layout = QVBoxLayout(bmi_tab)
+
+        label = QLabel("BMI Visualization", self)
+        label.setStyleSheet("font-size: 30px; font-weight: bold;")
+        layout.addWidget(label)
+
+        # Add more widgets for BMI visualization functionality here
+
+        self.tabs.addTab(bmi_tab, "BMI")
+
+    def create_meal_planner_tab(self):
+        """Create the Meal Planner tab"""
+        meal_tab = QWidget()
+        layout = QVBoxLayout(meal_tab)
+
+        label = QLabel("Meal Planner", self)
+        label.setStyleSheet("font-size: 30px; font-weight: bold;")
+        layout.addWidget(label)
+
+        # Add more widgets for meal planning functionality here
+
+        self.tabs.addTab(meal_tab, "Meal Planner")
+
+    def create_customer_service_tab(self):
+        """Create the Customer Service tab"""
+        service_tab = QWidget()
+        layout = QVBoxLayout(service_tab)
+
+        label = QLabel("Customer Service", self)
+        label.setStyleSheet("font-size: 30px; font-weight: bold;")
+        layout.addWidget(label)
+
+        # Add more widgets for customer service functionality here
+
+        self.tabs.addTab(service_tab, "Help")
     def logout(self):
         """Logout function - Close the welcome window and return to the main window"""
         self.central_widget.setCurrentIndex(0)  # Go back to main UI
