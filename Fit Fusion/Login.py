@@ -385,18 +385,17 @@ class LoginSignupApp(QWidget):
         # Set the tabs widget as the central widget
         self.central_widget.addWidget(tabs_widget)
         self.central_widget.setCurrentWidget(tabs_widget)  # Show the tabs widget
+
     def create_workout_planner_tab(self):
-            """Create the Workout Planner tab"""
-            workout_tab = QWidget()
-            layout = QVBoxLayout(workout_tab)
+        """Create the Workout Planner tab"""
+        workout_tab = QWidget()
+        layout = QVBoxLayout(workout_tab)
 
-            label = QLabel("Workout Planner", self)
-            label.setStyleSheet("font-size: 30px; font-weight: bold;")
-            layout.addWidget(label)
+        label = QLabel("Workout Planner", self)
+        label.setStyleSheet("font-size: 30px; font-weight: bold; color: white;")  # Set text color to white
+        layout.addWidget(label)
 
-            # Add more widgets for the workout planner functionality here
-
-            self.tabs.addTab(workout_tab, "Workouts")
+        self.tabs.addTab(workout_tab, "Workouts")
 
     def create_streak_tab(self):
         """Create the Streak tab"""
@@ -404,10 +403,8 @@ class LoginSignupApp(QWidget):
         layout = QVBoxLayout(streak_tab)
 
         label = QLabel("Streak Tracker", self)
-        label.setStyleSheet("font-size: 30px; font-weight: bold;")
+        label.setStyleSheet("font-size: 30px; font-weight: bold; color: white;")  # Set text color to white
         layout.addWidget(label)
-
-        # Add more widgets for the streak tracking functionality here
 
         self.tabs.addTab(streak_tab, "Streak")
 
@@ -417,10 +414,8 @@ class LoginSignupApp(QWidget):
         layout = QVBoxLayout(bmi_tab)
 
         label = QLabel("BMI Visualization", self)
-        label.setStyleSheet("font-size: 30px; font-weight: bold;")
+        label.setStyleSheet("font-size: 30px; font-weight: bold; color: white;")  # Set text color to white
         layout.addWidget(label)
-
-        # Add more widgets for BMI visualization functionality here
 
         self.tabs.addTab(bmi_tab, "BMI")
 
@@ -430,10 +425,8 @@ class LoginSignupApp(QWidget):
         layout = QVBoxLayout(meal_tab)
 
         label = QLabel("Meal Planner", self)
-        label.setStyleSheet("font-size: 30px; font-weight: bold;")
+        label.setStyleSheet("font-size: 30px; font-weight: bold; color: white;")  # Set text color to white
         layout.addWidget(label)
-
-        # Add more widgets for meal planning functionality here
 
         self.tabs.addTab(meal_tab, "Meal Planner")
 
@@ -443,12 +436,11 @@ class LoginSignupApp(QWidget):
         layout = QVBoxLayout(service_tab)
 
         label = QLabel("Customer Service", self)
-        label.setStyleSheet("font-size: 30px; font-weight: bold;")
+        label.setStyleSheet("font-size: 30px; font-weight: bold; color: white;")  # Set text color to white
         layout.addWidget(label)
 
-        # Add more widgets for customer service functionality here
-
         self.tabs.addTab(service_tab, "Help")
+
     def logout(self):
         """Logout function - Close the welcome window and return to the main window"""
         self.central_widget.setCurrentIndex(0)  # Go back to main UI
