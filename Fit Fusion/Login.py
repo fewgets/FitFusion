@@ -1,13 +1,15 @@
+import datetime
 import sys
 import sqlite3
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QStackedWidget, \
     QTabWidget, QSizePolicy, QHBoxLayout, QMessageBox, QTextEdit
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QBrush, QPalette
-from google.auth.transport import requests
 
+# Backend
+import google.generativeai as genai
+import requests
 
-# BMI Calculation Classes
 class BMI:
     def __init__(self):
         self.weight_kg = 0.0
@@ -53,14 +55,63 @@ class MealPlanner:
             print(f"Error fetching meal plan: {e}")
             return None
 
+class FitnessAIAssistant:
+    def __init__(self, api_key: str):
+        self.api_key = api_key
+        genai.configure(api_key=self.api_key)
+        self.model = genai.GenerativeModel('gemini-pro')
+        self.system_prompt = """
+        You are FitFusion AI, an expert fitness and nutrition coach with years of experience in personal training 
+        and dietary planning. Your role is to provide personalized fitness advice and workout recommendations.
+        """
+        self.initialize_chat()
+
+    def initialize_chat(self):
+        try:
+            self.chat = self.model.start_chat(history=[])
+            response = self.chat.send_message(self.system_prompt)
+            return response.text
+        except Exception as e:
+            print(f"Error initializing chat: {str(e)}")
+
+    def send_query(self, user_query: str) -> str:
+        try:
+            response = self.chat.send_message(user_query)
+            return response.text
+        except Exception as e:
+            print(f"Error communicating with AI: {str(e)}")
+            return "Error communicating with AI."
+
+class WorkoutPlanner:
+    def __init__(self, api_key):
+        self.api_key = api_key
+        self.base_url = "https://AI-Workout-Planner.proxy-production.allthingsdev.co"
+
+    def generate_workout_plan(self, workout_duration, muscle_group, workout_location, available_equipment):
+        headers = {
+            "x-apihub-key": self.api_key,
+            "x-apihub-host": "AI-Workout-Planner.allthingsdev.co",
+            "x-apihub-endpoint": "307137ae-fcd2-4781-bbf6-a9012349598c"
+        }
+        url = f"{self.base_url}/?time={workout_duration}&muscle={muscle_group}&location={workout_location}&equipment={available_equipment}"
+
+        try:
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            print(f"Error fetching workout plan: {e}")
+            return None
+
+
 class LoginSignupApp(QWidget):
     def __init__(self, api_key):
         super().__init__()
         self.meal_planner = MealPlanner(api_key)  # Create an instance of MealPlanner
         self.setWindowTitle('FitFusion: Fitness Tracker')
         self.setGeometry(100, 100, 800, 600)  # Set window size
-
         self.central_widget = QStackedWidget(self)
+
         self.setLayout(QVBoxLayout())
         self.layout().addWidget(self.central_widget)
 
@@ -69,8 +120,8 @@ class LoginSignupApp(QWidget):
         self.forward_button = QPushButton("Forward")
 
         # Set button styles
-        self.set_button_style(self.back_button)
-        self.set_button_style(self.forward_button)
+        self.set_back_button_style(self.back_button)
+        self.set_forward_button_style(self.forward_button)
 
         # Connect buttons to their respective functions
         self.back_button.clicked.connect(self.go_back)
@@ -96,6 +147,33 @@ class LoginSignupApp(QWidget):
         self.central_widget.setCurrentIndex(0)  # Start with the main UI
         self.add_to_history(0)  # Add main UI to history
 
+    def set_back_button_style(self, button):
+        button.setStyleSheet("""
+            background-color: #64B5F6;  /* Light blue for back button */
+            color: white;                /* White text */
+            font-size: 18px;             /* Increased font size */
+            padding: 15px;               /* Increased padding */
+            border-radius: 5px;          /* Rounded corners */
+            cursor: pointer;              /* Change cursor to pointer */
+        }
+        QPushButton:hover {
+            background-color: #5a9bd4;  /* Darker blue on hover */
+        }
+        """)
+
+    def set_forward_button_style(self, button):
+        button.setStyleSheet("""
+            background-color: #FFB74D;  /* Light orange for forward button */
+            color: white;                /* White text */
+            font-size: 18px;             /* Increased font size */
+            padding: 15px;               /* Increased padding */
+            border-radius: 5px;          /* Rounded corners */
+            cursor: pointer;              /* Change cursor to pointer */
+        }
+        QPushButton:hover {
+            background-color: #ff9f3d;  /* Darker orange on hover */
+        }
+        """)
     def set_button_style(self, button):
         button.setStyleSheet("""
             background-color: #E1BEE7;  /* Light purple background */
@@ -105,21 +183,21 @@ class LoginSignupApp(QWidget):
             border: 1px solid #ccc;      /* Border around buttons */
             border-radius: 4px;          /* Rounded corners */
             cursor: pointer;              /* Change cursor to pointer */
-        """)
-        button.setStyleSheet(button.styleSheet() + """
-            QPushButton:hover {
-                background-color: #D5006D;  /* Darker purple on hover */
-            }
+        }
+        QPushButton:hover {
+            background-color: #D5006D;  /* Darker purple on hover */
+        }
         """)
 
     def set_text_field_style(self, text_field):
         text_field.setStyleSheet("""
-            font-size : 24px;  /* Increased font size */
+            font-size: 24px;  /* Increased font size */
             padding: 12px;    /* Increased padding */
             border: 2px solid #444444;
             border-radius: 5px;
             background-color: #f1f1f1;
         """)
+
 
     def add_to_history(self, index):
         """Add the current index to the history."""
@@ -145,41 +223,47 @@ class LoginSignupApp(QWidget):
         """Initial window with Register Here options (Login/Signup)"""
         main_widget = QWidget()
         main_layout = QVBoxLayout(main_widget)
-        self.set_background_image("background_image_dark")
+
+        # Background Image for Main Window
+        self.set_background_image("background_image_dark")  # Set your downloaded background image path here
+
+        # Title label (adjusted font size)
         label = QLabel("Welcome to FitFusion!", self)
         label.setStyleSheet("font-size: 50px; font-weight: bold; color: white;")
         label.setAlignment(Qt.AlignCenter)
         main_layout.addWidget(label)
 
+        # Buttons for Login and Signup with modern styles
         btn_login = QPushButton('Login', self)
         self.set_button_style(btn_login)
         btn_login.setStyleSheet(btn_login.styleSheet() + "font-size: 30px; margin-top: 20px;")
-        btn_login.clicked.connect(lambda: self.switch_to_login())
+        btn_login.clicked.connect(lambda: self.switch_to_login())  # Switch to login
         main_layout.addWidget(btn_login)
 
         btn_signup = QPushButton('Signup', self)
         self.set_button_style(btn_signup)
         btn_signup.setStyleSheet(btn_signup.styleSheet() + "font-size: 30px; margin-top: 20px;")
-        btn_signup.clicked.connect(lambda: self.switch_to_signup())
+        btn_signup.clicked.connect(lambda: self.switch_to_signup())  # Switch to signup
         main_layout.addWidget(btn_signup)
 
         self.central_widget.addWidget(main_widget)
 
     def switch_to_login(self):
-        self.central_widget.setCurrentIndex(1)
-        self.add_to_history(1)
+        self.central_widget.setCurrentIndex(1)  # Switch to login
+        self.add_to_history(1)  # Add login UI to history
 
     def switch_to_signup(self):
-        self.central_widget.setCurrentIndex(2)
-        self.add_to_history(2)
+        self.central_widget.setCurrentIndex(2)  # Switch to signup
+        self.add_to_history(2)  # Add signup UI to history
 
     def init_login_ui(self):
         """Login UI with enhanced interaction"""
         login_widget = QWidget()
         layout = QVBoxLayout(login_widget)
 
+        # Login Form UI with Custom Styling
         email_label = QLabel("Email: ", self)
-        email_label.setStyleSheet("font-size: 30px; color: #444444; font-weight: bold;")
+        email_label.setStyleSheet("font-size: 30px; color: white; font-weight: bold;")
         layout.addWidget(email_label)
 
         self.login_email = QLineEdit(self)
@@ -188,7 +272,7 @@ class LoginSignupApp(QWidget):
         layout.addWidget(self.login_email)
 
         password_label = QLabel("Password: ", self)
-        password_label.setStyleSheet("font-size: 30px; color: #444444; font-weight: bold;")
+        password_label.setStyleSheet("font-size: 30px; color: white; font-weight: bold;")
         layout.addWidget(password_label)
 
         self.login_password = QLineEdit(self)
@@ -197,20 +281,25 @@ class LoginSignupApp(QWidget):
         self.login_password.setPlaceholderText("Enter your password")
         layout.addWidget(self.login_password)
 
-        btn_forgot_password = QPushButton("Forgot Password?", self)
-        self.set_button_style(btn_forgot_password)
-        btn_forgot_password.clicked.connect(self.open_forgot_password_window)
-        layout.addWidget(btn_forgot_password)
-
-        self.login_feedback = QLabel("", self)
-        self.login_feedback.setStyleSheet("font-size: 25px; color: red;")
-        layout.addWidget(self.login_feedback)
-
+        # Login button with animation and feedback
         btn_login = QPushButton("Login", self)
         self.set_button_style(btn_login)
         btn_login.setStyleSheet(btn_login.styleSheet() + "font-size: 25px; margin-top: 20px; font-weight: bold;")
         btn_login.clicked.connect(self.on_login_button_click)
         layout.addWidget(btn_login)
+
+
+        # Feedback label
+        self.login_feedback = QLabel("", self)
+        self.login_feedback.setStyleSheet("font-size: 25px; color: white;")
+        layout.addWidget(self.login_feedback)
+
+
+        # Forgot Password Button
+        btn_forgot_password = QPushButton("Forgot Password?", self)
+        self.set_button_style(btn_forgot_password)
+        btn_forgot_password.clicked.connect(self.open_forgot_password_window)
+        layout.addWidget(btn_forgot_password)
 
         self.central_widget.addWidget(login_widget)
 
@@ -234,7 +323,6 @@ class LoginSignupApp(QWidget):
         email = self.login_email.text().strip()
         password = self.login_password.text().strip()
 
-        conn = sqlite3
         conn = sqlite3.connect("1.db")
         cur = conn.cursor()
         cur.execute("SELECT * FROM test WHERE email=? AND password=?", (email, password))
@@ -243,25 +331,26 @@ class LoginSignupApp(QWidget):
 
         if row:
             user_name = row[0][1]
-            self.login_feedback.setStyleSheet("font-size: 25px; color: green;")
+            self.login_feedback.setStyleSheet("font-size: 25px; color: white;")
             self.login_feedback.setText(f"Login successful. Welcome {user_name}!")
-            self.show_welcome_frame(user_name)
+            self.show_welcome_frame(user_name)  # Show welcome frame upon successful login
         else:
-            self.login_feedback.setStyleSheet("font-size: 25px; color: red;")
+            self.login_feedback.setStyleSheet("font-size: 25px; color: white;")
             self.login_feedback.setText("Incorrect email or password.")
 
-    def open_forgot_password_window(self):
+    def open_forgot_password_window(self, event):
         """Open the forgot password dialog"""
-        self.central_widget.setCurrentIndex(3)
-        self.add_to_history(3)
+        self.central_widget.setCurrentIndex(3)  # Switch to forgot password UI
+        self.add_to_history(3)  # Add forgot password UI to history
 
     def init_forgot_password_ui(self):
         """Forgot Password UI"""
         forgot_widget = QWidget()
         layout = QVBoxLayout(forgot_widget)
 
+        # Label and input for email
         email_label = QLabel("Enter your registered email:", self)
-        email_label.setStyleSheet("font-size: 25px; color: #444444; font-weight: bold;")
+        email_label.setStyleSheet("font-size: 25px; color: white; font-weight: bold;")
         layout.addWidget(email_label)
 
         self.forgot_email = QLineEdit(self)
@@ -269,20 +358,22 @@ class LoginSignupApp(QWidget):
         self.forgot_email.setPlaceholderText("Enter your email")
         layout.addWidget(self.forgot_email)
 
+        # Submit button for password reset
         btn_reset = QPushButton("Reset Password", self)
         self.set_button_style(btn_reset)
         btn_reset.setStyleSheet(btn_reset.styleSheet() + "font-size: 25px; margin-top: 20px; font-weight: bold;")
         btn_reset.clicked.connect(self.reset_password)
         layout.addWidget(btn_reset)
 
+        # Feedback label
         self.forgot_password_feedback = QLabel("", self)
-        self.forgot_password_feedback.setStyleSheet("font-size: 25px; color: green;")
+        self.forgot_password_feedback.setStyleSheet("font-size: 25px; color: white;")
         layout.addWidget(self.forgot_password_feedback)
 
         self.central_widget.addWidget(forgot_widget)
 
     def reset_password(self):
-        """Simulate password reset process"""
+        """Simulate password reset process (for now just a placeholder)"""
         email = self.forgot_email.text().strip()
 
         if not email:
@@ -290,14 +381,15 @@ class LoginSignupApp(QWidget):
             return
 
         self.forgot_password_feedback.setText("Password reset instructions sent to your email!")
-        self.central_widget.setCurrentIndex(0)
-        self.add_to_history(0)
+        self.central_widget.setCurrentIndex(0)  # Go back to main UI after reset
+        self.add_to_history(0)  # Add main UI to history
 
     def init_signup_ui(self):
-        """Signup UI"""
+        # Signup UI
         signup_widget = QWidget()
         layout = QVBoxLayout(signup_widget)
 
+        # Signup Form UI with Custom Styling
         name_label = QLabel("User  Name: ", self)
         name_label.setStyleSheet("font-size: 30px; color: #333333;")
         layout.addWidget(name_label)
@@ -323,10 +415,12 @@ class LoginSignupApp(QWidget):
         self.signup_password.setEchoMode(QLineEdit.Password)
         layout.addWidget(self.signup_password)
 
+        # Feedback label
         self.signup_feedback = QLabel("", self)
-        self.signup_feedback.setStyleSheet("font-size: 25px; color: green;")
+        self.signup_feedback.setStyleSheet("font-size: 25px; color: white;")
         layout.addWidget(self.signup_feedback)
 
+        # Sign up button
         btn_signup = QPushButton("Signup", self)
         self.set_button_style(btn_signup)
         btn_signup.setStyleSheet(btn_signup.styleSheet() + "font-size: 25px; margin-top: 20px;")
@@ -351,7 +445,8 @@ class LoginSignupApp(QWidget):
         cur.execute("INSERT INTO test (name, email, password) VALUES (?, ?, ?)", (name, email, password))
 
         conn.commit()
-        conn.close
+        conn.close()
+
         self.signup_feedback.setText("Account created successfully!")
         self.signup_name.clear()
         self.signup_email.clear()
@@ -364,11 +459,13 @@ class LoginSignupApp(QWidget):
         welcome_widget = QWidget()
         layout = QVBoxLayout(welcome_widget)
 
+        # Welcome message with custom style
         self.welcome_msg = QLabel("", self)
         self.welcome_msg.setStyleSheet("font-size: 40px; font-weight: bold; color: #333333;")
-        self.welcome_msg.setAlignment(Qt.AlignCenter)
+        self.welcome_msg.setAlignment(Qt.AlignCenter)  # Centering the label
         layout.addWidget(self.welcome_msg)
 
+        # Logout button with modern style
         btn_logout = QPushButton("Logout", self)
         self.set_button_style(btn_logout)
         btn_logout.setStyleSheet(btn_logout.styleSheet() + "font-size: 25px; margin-top: 20px;")
@@ -388,37 +485,43 @@ class LoginSignupApp(QWidget):
         tabs_widget = QWidget()
         tabs_layout = QVBoxLayout(tabs_widget)
 
+        # Create QTabWidget
         self.tabs = QTabWidget()
+
+        # Apply the updated style sheet for colorful and fitting tab buttons
         self.tabs.setStyleSheet("""
             QTabBar::tab {
-                background-color: #E1BEE7;  
-                color: black;               
-                font-size: 14px;            
-                padding: 10px 25px;         
-                border: 1px solid #ccc;     
-                border-bottom: none;        
-                border-radius: 4px;         
-                min-width: 100px;           
+                background-color: #E1BEE7;  /* Light purple background */
+                color: black;               /* Black text for contrast */
+                font-size: 14px;            /* Font size */
+                padding: 10px 25px;         /* Ensure proper padding for better visibility */
+                border: 1px solid #ccc;     /* Border around tabs */
+                border-bottom: none;        /* Smooth look */
+                border-radius: 4px;         /* Rounded corners */
+                min-width: 100px;           /* Minimum width to prevent truncation */
             }
 
             QTabBar::tab:selected {
-                background-color: #D81B60;  
-                font-weight: bold;          
+                background-color: #D81B60;  /* Darker purple for selected tab */
+                font-weight: bold;          /* Bold text for selected tab */
             }
 
             QTabBar::tab:hover {
-                background-color: #D5006D;  
+                background-color: #D5006D;  /* Lighter purple on hover */
             }
 
             QTabWidget::pane {
-                border: 1px solid #ccc;     
-                border-top: none;           
+                border: 1px solid #ccc;     /* Border around tab content */
+                border-top: none;           /* Merge content with tabs */
             }
         """)
 
+        # Allow tabs to expand with window size
         self.tabs.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # Add the QTabWidget to the layout
         tabs_layout.addWidget(self.tabs)
 
+        # Create tabs
         self.create_workout_planner_tab()
         self.create_streak_tab()
         self.create_bmi_visualization_tab()
@@ -427,9 +530,12 @@ class LoginSignupApp(QWidget):
         self.create_textual_chat_tab()
         self.create_help_tab()
 
+        # Set the tabs widget as the central widget
         self.central_widget.addWidget(tabs_widget)
-        self.central_widget.setCurrentWidget(tabs_widget)
-        tabs_layout.setStretch(0, 1)
+        self.central_widget.setCurrentWidget(tabs_widget)  # Show the tabs widget
+
+        # Use stretch to ensure resizing affects tab size properly
+        tabs_layout.setStretch(0, 1)  # Allow the tab widget to stretch
 
     def create_workout_planner_tab(self):
         workout_tab = QWidget()
@@ -470,14 +576,21 @@ class LoginSignupApp(QWidget):
 
         self.tabs.addTab(workout_tab, "Workouts")
 
+
     def generate_workout_plan(self):
         duration = self.workout_duration_input.text()
         muscle_group = self.muscle_group_input.text()
         location = self.workout_location_input.text()
         equipment = self.equipment_input.text()
 
-        # Placeholder for workout plan generation logic
-        self.workout_plan_output.setText(f"Workout Plan for {duration} minutes targeting {muscle_group} at {location} with {equipment}.")
+        workout_plan = self.workout_planner.generate_workout_plan(duration, muscle_group, location, equipment)
+        if workout_plan:
+            self.workout_plan_output.setText(
+                f"Workout Plan:\nWarm Up: {workout_plan.get('Warm Up', 'No warm-up exercises found')}\n"
+                f"Main Exercises: {workout_plan.get('Exercises', 'No main exercises found')}\n"
+                f"Cool Down: {workout_plan.get('Cool Down', 'No cool-down exercises found')}")
+        else:
+            self.workout_plan_output.setText("Failed to generate workout plan.")
 
     def create_streak_tab(self):
         streak_tab = QWidget()
@@ -487,6 +600,7 @@ class LoginSignupApp(QWidget):
         label.setAlignment(Qt.AlignCenter)
         label.setStyleSheet("font-size: 30px; font-weight: bold; color: white;")
         layout.addWidget(label)
+
 
         button_reset = QPushButton("Reset Streak", self)
         button_view = QPushButton("View Progress", self)
@@ -530,8 +644,9 @@ class LoginSignupApp(QWidget):
         calculate_button.clicked.connect(self.calculate_bmi)
         layout.addWidget(calculate_button)
 
+        # Create a text field to show the BMI result
         self.bmi_output = QLineEdit(self)
-        self.bmi_output.setReadOnly(True)
+        self.bmi_output.setReadOnly(True)  # Make it read-only
         layout.addWidget(self.bmi_output)
 
         self.tabs.addTab(bmi_tab, "BMI")
@@ -546,17 +661,19 @@ class LoginSignupApp(QWidget):
             bmi_value = bmi_metric.calculate_bmi()
             bmi_category = bmi_metric.get_bmi_category(bmi_value)
 
+            # Display the BMI value and category in the text field
             self.bmi_output.setText(f"BMI Value: {bmi_value:.2f}, Category: {bmi_category}")
 
         except ValueError:
             self.bmi_output.setText("Please enter valid numbers for weight, height, and age.")
+
     def create_meal_planner_tab(self):
         meal_tab = QWidget()
         layout = QVBoxLayout(meal_tab)
 
         label = QLabel("Meal Planner", self)
         label.setAlignment(Qt.AlignCenter)
-        label.setStyleSheet("font-size: 30px; font-weight: bold; color: black;")
+        label.setStyleSheet("font-size: 30px; font-weight: bold; color: white;")
         layout.addWidget(label)
 
         self.calories_input = QLineEdit(self)
@@ -574,7 +691,6 @@ class LoginSignupApp(QWidget):
         layout.addWidget(self.meal_plan_output)
 
         self.tabs.addTab(meal_tab, "Meals")
-
 
     def generate_meal_plan(self):
         try:
@@ -597,6 +713,46 @@ class LoginSignupApp(QWidget):
         except Exception as e:
             self.meal_plan_output.setPlainText(f"An error occurred: {e}")
 
+    def create_customer_service_tab(self):
+        service_tab = QWidget()
+        layout = QVBoxLayout(service_tab)
+
+        label = QLabel("Customer Service", self)
+        label.setAlignment(Qt.AlignCenter)
+        label.setStyleSheet("font-size: 30px; font-weight: bold; color: white;")
+        layout.addWidget(label)
+
+        button_contact_support = QPushButton("Contact Support", self)
+        button_faq = QPushButton("FAQ", self)
+
+        self.set_button_style(button_contact_support)
+        self.set_button_style(button_faq)
+
+        button_layout = QHBoxLayout()
+        button_layout.addWidget(button_contact_support)
+        button_layout.addWidget(button_faq)
+
+        layout.addLayout(button_layout)
+
+        # Add Fitness Support API functionality
+        button_fitness_support = QPushButton("Get Fitness Support", self)
+        button_fitness_support.clicked.connect(self.get_fitness_support)
+        self.set_button_style(button_fitness_support)
+        layout.addWidget(button_fitness_support)
+
+        self.tabs.addTab(service_tab, "Help")
+
+    def get_fitness_support(self):
+        # Placeholder for Fitness Support API call
+        try:
+            response = requests.get("https://api.fitnesssupport.com/getSupport")  # Replace with actual API URL
+            response.raise_for_status()
+            support_info = response.json()
+            support_message = support_info.get("message", "No support information available.")
+            self.show_message(support_message)
+        except requests.exceptions.RequestException as e:
+            self.show_message(f"Error fetching support information: {e}")
+
     def create_voice_assistant_tab(self):
         voice_tab = QWidget()
         layout = QVBoxLayout(voice_tab)
@@ -613,7 +769,7 @@ class LoginSignupApp(QWidget):
         # Placeholder for voice assistant functionality
         voice_instruction = QLabel("Voice assistant features will be implemented here.", self)
         voice_instruction.setAlignment(Qt.AlignCenter)
-        voice_instruction.setStyleSheet("font-size: 20px; color: #cccccc;")
+        voice_instruction.setStyleSheet("font-size: 20px; color: #cccccc;")  # Light gray
         layout.addWidget(voice_instruction)
 
         self.tabs.addTab(voice_tab, "Voice Assistant")
@@ -675,6 +831,12 @@ class LoginSignupApp(QWidget):
 
         self.tabs.addTab(help_tab, "Help")
 
+    def show_message(self, message):
+        """Display a message in a dialog."""
+        msg_box = QMessageBox()
+        msg_box.setText(message)
+        msg_box.exec_()
+
     def logout(self):
         """Logout function - Close the welcome window and return to the main window"""
         self.central_widget.setCurrentIndex(0)  # Go back to main UI
@@ -692,12 +854,12 @@ class LoginSignupApp(QWidget):
         palette.setBrush(QPalette.Window, QBrush(pixmap))
         self.setPalette(palette)
 
-
-
 if __name__ == "__main__":
     api_key = "e5968cb05a3b42a4845c016350e83f17"
     app = QApplication(sys.argv)
     window = LoginSignupApp(api_key)
-
     window.show()
     sys.exit(app.exec_())
+
+
+
