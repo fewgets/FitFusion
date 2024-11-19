@@ -323,11 +323,17 @@ class LoginSignupApp(QWidget):
         email = self.login_email.text().strip()
         password = self.login_password.text().strip()
 
-        conn = sqlite3.connect("1.db")
-        cur = conn.cursor()
-        cur.execute("SELECT * FROM test WHERE email=? AND password=?", (email, password))
-        row = cur.fetchall()
-        conn.close()
+        try:
+            conn = sqlite3.connect("1.db")
+            cur = conn.cursor()
+            cur.execute("SELECT * FROM test WHERE email=? AND password=?", (email, password))
+            row = cur.fetchall()
+        except sqlite3.Error as e:
+            self.login_feedback.setStyleSheet("font-size: 25px; color: red;")
+            self.login_feedback.setText(f"Database error: {e}")
+            return
+        finally:
+            conn.close()  # Ensure the connection is closed
 
         if row:
             user_name = row[0][1]
@@ -335,9 +341,9 @@ class LoginSignupApp(QWidget):
             self.login_feedback.setText(f"Login successful. Welcome {user_name}!")
             self.show_welcome_frame(user_name)  # Show welcome frame upon successful login
         else:
+            # Provide a more user-friendly message
             self.login_feedback.setStyleSheet("font-size: 25px; color: white;")
-            self.login_feedback.setText("Incorrect email or password.")
-
+            self.login_feedback.setText("No such user found. Please sign up or check your credentials.")
     def open_forgot_password_window(self, event):
         """Open the forgot password dialog"""
         self.central_widget.setCurrentIndex(3)  # Switch to forgot password UI
@@ -380,9 +386,11 @@ class LoginSignupApp(QWidget):
             self.forgot_password_feedback.setText("Please enter your email.")
             return
 
-        self.forgot_password_feedback.setText("Password reset instructions sent to your email!")
-        self.central_widget.setCurrentIndex(0)  # Go back to main UI after reset
-        self.add_to_history(0)  # Add main UI to history
+        # Here you would typically send the email for password reset
+        # For now, we will simulate this with a message
+        self.forgot_password_feedback.setText(
+            "Password reset instructions sent to your email! Please check your inbox.")
+        # Do not switch back to the main UI; stay on the forgot password screen
 
     def init_signup_ui(self):
         # Signup UI
@@ -391,7 +399,7 @@ class LoginSignupApp(QWidget):
 
         # Signup Form UI with Custom Styling
         name_label = QLabel("User  Name: ", self)
-        name_label.setStyleSheet("font-size: 30px; color: #333333;")
+        name_label.setStyleSheet("font-size: 30px; color: white;")
         layout.addWidget(name_label)
 
         self.signup_name = QLineEdit(self)
@@ -399,7 +407,7 @@ class LoginSignupApp(QWidget):
         layout.addWidget(self.signup_name)
 
         email_label = QLabel("User  Email: ", self)
-        email_label.setStyleSheet("font-size: 30px; color: #333333;")
+        email_label.setStyleSheet("font-size: 30px; color: white;")
         layout.addWidget(email_label)
 
         self.signup_email = QLineEdit(self)
@@ -407,7 +415,7 @@ class LoginSignupApp(QWidget):
         layout.addWidget(self.signup_email)
 
         password_label = QLabel("Password: ", self)
-        password_label.setStyleSheet("font-size: 30px; color: #333333;")
+        password_label.setStyleSheet("font-size: 30px; color: white;")
         layout.addWidget(password_label)
 
         self.signup_password = QLineEdit(self)
@@ -860,6 +868,3 @@ if __name__ == "__main__":
     window = LoginSignupApp(api_key)
     window.show()
     sys.exit(app.exec_())
-
-
-
