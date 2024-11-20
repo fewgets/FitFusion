@@ -600,6 +600,9 @@ class LoginSignupApp(QWidget):
         else:
             self.workout_plan_output.setText("Failed to generate workout plan.")
 
+
+
+
     def create_streak_tab(self):
         streak_tab = QWidget()
         layout = QVBoxLayout(streak_tab)
@@ -622,6 +625,10 @@ class LoginSignupApp(QWidget):
 
         layout.addLayout(button_layout)
         self.tabs.addTab(streak_tab, "Streak")
+
+
+
+
 
     def create_bmi_visualization_tab(self):
         bmi_tab = QWidget()
@@ -675,6 +682,9 @@ class LoginSignupApp(QWidget):
         except ValueError:
             self.bmi_output.setText("Please enter valid numbers for weight, height, and age.")
 
+
+
+
     def create_meal_planner_tab(self):
         meal_tab = QWidget()
         layout = QVBoxLayout(meal_tab)
@@ -721,34 +731,8 @@ class LoginSignupApp(QWidget):
         except Exception as e:
             self.meal_plan_output.setPlainText(f"An error occurred: {e}")
 
-    def create_customer_service_tab(self):
-        service_tab = QWidget()
-        layout = QVBoxLayout(service_tab)
 
-        label = QLabel("Customer Service", self)
-        label.setAlignment(Qt.AlignCenter)
-        label.setStyleSheet("font-size: 30px; font-weight: bold; color: white;")
-        layout.addWidget(label)
 
-        button_contact_support = QPushButton("Contact Support", self)
-        button_faq = QPushButton("FAQ", self)
-
-        self.set_button_style(button_contact_support)
-        self.set_button_style(button_faq)
-
-        button_layout = QHBoxLayout()
-        button_layout.addWidget(button_contact_support)
-        button_layout.addWidget(button_faq)
-
-        layout.addLayout(button_layout)
-
-        # Add Fitness Support API functionality
-        button_fitness_support = QPushButton("Get Fitness Support", self)
-        button_fitness_support.clicked.connect(self.get_fitness_support)
-        self.set_button_style(button_fitness_support)
-        layout.addWidget(button_fitness_support)
-
-        self.tabs.addTab(service_tab, "Help")
 
     def get_fitness_support(self):
         # Placeholder for Fitness Support API call
@@ -760,6 +744,8 @@ class LoginSignupApp(QWidget):
             self.show_message(support_message)
         except requests.exceptions.RequestException as e:
             self.show_message(f"Error fetching support information: {e}")
+
+
 
     def create_voice_assistant_tab(self):
         voice_tab = QWidget()
