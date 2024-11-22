@@ -34,26 +34,47 @@ class BMIMetric(BMI):
         # BMI formula for Metric system
         return self.weight_kg / (self.height_m ** 2)
 
-
-# Meal Planner Integration
 class MealPlanner:
-    def _init_(self, api_key):
+    def __init__(self, api_key):
         self.api_key = api_key
         self.base_url = "https://api.spoonacular.com/mealplanner/generate"
 
-    def get_meal_plan(self, target_calories):
+        # Initialize Gemini AI
+        genai.configure(api_key=self.api_key)
+        self.model = genai.GenerativeModel('gemini-pro')
+        self.chat = self.model.start_chat(history=[])
+
+        self.system_prompt = """
+        You are FitFusion AI, a health and nutrition expert. Provide meal plans based on calorie requirements,
+        dietary preferences, and health goals. Ensure the meals are diverse, nutritious, and practical.
+        """
+
+    def get_meal_plan(self, target_calories, dietary_preferences=None):
+        """Fetch a meal plan using Spoonacular or Gemini AI."""
         params = {
             "apiKey": self.api_key,
             "timeFrame": "day",
             "targetCalories": target_calories,
         }
+
+        # Try Spoonacular API first
         try:
             response = requests.get(self.base_url, params=params)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            print(f"Error: {e}")
+            print(f"Spoonacular API error: {e}")
+
+        # Fall back to Gemini AI if Spoonacular fails
+        try:
+            user_query = f"Suggest meals for {target_calories} calories. Preferences: {dietary_preferences or 'None'}."
+            self.chat.send_message(self.system_prompt)
+            ai_response = self.chat.send_message(user_query)
+            return {"ai_generated": ai_response.text}
+        except Exception as e:
+            print(f"Gemini AI error: {e}")
             return None
+
 
 
 class FitnessAIAssistant:

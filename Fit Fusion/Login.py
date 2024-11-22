@@ -35,52 +35,77 @@ class BMIMetric(BMI):
 
     def calculate_bmi(self):
         return self.weight_kg / (self.height_m ** 2)
-
 class MealPlanner:
     def __init__(self, api_key):
         self.api_key = api_key
         self.base_url = "https://api.spoonacular.com/mealplanner/generate"
 
-    def get_meal_plan(self, target_calories):
+        # Initialize Gemini AI
+        genai.configure(api_key=self.api_key)
+        self.model = genai.GenerativeModel('gemini-pro')
+        self.chat = self.model.start_chat(history=[])
+
+        self.system_prompt = """
+        You are FitFusion AI, a health and nutrition expert. Provide meal plans based on calorie requirements,
+        dietary preferences, and health goals. Ensure the meals are diverse, nutritious, and practical.
+        """
+
+    def get_meal_plan(self, target_calories, dietary_preferences=None):
+        """Fetch a meal plan using Spoonacular or Gemini AI."""
         params = {
             "apiKey": self.api_key,
             "timeFrame": "day",
             "targetCalories": target_calories,
         }
+
+        # Try Spoonacular API first
         try:
             response = requests.get(self.base_url, params=params)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            print(f"Error fetching meal plan: {e}")
+            print(f"Spoonacular API error: {e}")
+
+        # Fall back to Gemini AI if Spoonacular fails
+        try:
+            user_query = f"Suggest meals for {target_calories} calories. Preferences: {dietary_preferences or 'None'}."
+            self.chat.send_message(self.system_prompt)
+            ai_response = self.chat.send_message(user_query)
+            return {"ai_generated": ai_response.text}
+        except Exception as e:
+            print(f"Gemini AI error: {e}")
             return None
 
+
 class FitnessAIAssistant:
-    def __init__(self, api_key: str):
+    def __init__(self, api_key):
         self.api_key = api_key
         genai.configure(api_key=self.api_key)
         self.model = genai.GenerativeModel('gemini-pro')
         self.system_prompt = """
-        You are FitFusion AI, an expert fitness and nutrition coach with years of experience in personal training 
-        and dietary planning. Your role is to provide personalized fitness advice and workout recommendations.
+        You are FitFusion AI, an expert in fitness, nutrition, and health. Respond concisely to user queries.
         """
+        self.chat = None
         self.initialize_chat()
 
     def initialize_chat(self):
+        """Initialize the chat object with the system prompt."""
         try:
             self.chat = self.model.start_chat(history=[])
-            response = self.chat.send_message(self.system_prompt)
-            return response.text
+            self.chat.send_message(self.system_prompt)
         except Exception as e:
-            print(f"Error initializing chat: {str(e)}")
+            print(f"Error initializing Gemini AI chat: {e}")
 
     def send_query(self, user_query: str) -> str:
+        """Send a query to Gemini AI and return the response."""
         try:
+            if not self.chat:
+                self.initialize_chat()
             response = self.chat.send_message(user_query)
             return response.text
         except Exception as e:
-            print(f"Error communicating with AI: {str(e)}")
-            return "Error communicating with AI."
+            print(f"Error communicating with Gemini AI: {str(e)}")
+            return "Sorry, I couldn't process your request at the moment."
 
 class WorkoutPlanner:
     def __init__(self, api_key):
@@ -105,8 +130,9 @@ class WorkoutPlanner:
 
 
 class LoginSignupApp(QWidget):
-    def __init__(self, api_key):
+    def __init__(self, api_key,gemini_api_key):
         super().__init__()
+        self.fitness_ai_assistant = FitnessAIAssistant(gemini_api_key)
         self.meal_planner = MealPlanner(api_key)  # Create an instance of MealPlanner
         self.setWindowTitle('FitFusion: Fitness Tracker')
         self.setGeometry(100, 100, 800, 600)  # Set window size
@@ -146,6 +172,9 @@ class LoginSignupApp(QWidget):
 
         self.central_widget.setCurrentIndex(0)  # Start with the main UI
         self.add_to_history(0)  # Add main UI to history
+
+
+
 
     def set_back_button_style(self, button):
         button.setStyleSheet("""
@@ -682,9 +711,6 @@ class LoginSignupApp(QWidget):
         except ValueError:
             self.bmi_output.setText("Please enter valid numbers for weight, height, and age.")
 
-
-
-
     def create_meal_planner_tab(self):
         meal_tab = QWidget()
         layout = QVBoxLayout(meal_tab)
@@ -695,9 +721,12 @@ class LoginSignupApp(QWidget):
         layout.addWidget(label)
 
         self.calories_input = QLineEdit(self)
-        self.calories_input.setPlaceholderText("Target Calories")
+        self.calories_input.setPlaceholderText("Enter Target Calories")
         self.set_text_field_style(self.calories_input)
+        self.calories_input.setStyleSheet(self.calories_input.styleSheet() + "margin-bottom: 15px;")
         layout.addWidget(self.calories_input)
+
+
 
         generate_meal_button = QPushButton("Generate Meal Plan", self)
         self.set_button_style(generate_meal_button)
@@ -706,9 +735,16 @@ class LoginSignupApp(QWidget):
 
         self.meal_plan_output = QTextEdit(self)
         self.meal_plan_output.setReadOnly(True)
+        self.meal_plan_output.setStyleSheet("""
+            background-color: #f9f9f9;
+            border: 1px solid #cccccc;
+            font-size: 14px;
+            line-height: 1.5;
+            padding: 10px;
+        """)
         layout.addWidget(self.meal_plan_output)
 
-        self.tabs.addTab(meal_tab, "Meals")
+        self.tabs.addTab(meal_tab, "Meal Planner")
 
     def generate_meal_plan(self):
         try:
@@ -745,27 +781,69 @@ class LoginSignupApp(QWidget):
         except requests.exceptions.RequestException as e:
             self.show_message(f"Error fetching support information: {e}")
 
+    def activate_voice_assistant(self):
+        """Activate the voice assistant and simulate voice recording."""
+        try:
+            # Change the status and button visibility
+            self.voice_status_label.setText("Status: Active (Recording...)")
+            self.voice_status_label.setStyleSheet("font-size: 20px; color: #64B5F6;")
+            self.activate_button.setVisible(False)
+            self.deactivate_button.setVisible(True)
+            self.voice_instruction.setText("Recording your voice input. Please speak...")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to activate the Voice Assistant: {str(e)}")
 
+    def deactivate_voice_assistant(self):
+        """Deactivate the voice assistant and stop recording."""
+        try:
+            # Change the status and button visibility
+            self.voice_status_label.setText("Status: Inactive")
+            self.voice_status_label.setStyleSheet("font-size: 20px; color: #cccccc;")
+            self.activate_button.setVisible(True)
+            self.deactivate_button.setVisible(False)
+
+            # Simulate processing the recorded voice input
+            QMessageBox.information(self, "Voice Assistant", "Recording stopped. Voice input processed successfully!")
+            self.voice_instruction.setText("Voice assistant features will be implemented here.")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to deactivate the Voice Assistant: {str(e)}")
 
     def create_voice_assistant_tab(self):
+        # Create the tab widget for the Voice Assistant
         voice_tab = QWidget()
         layout = QVBoxLayout(voice_tab)
 
+        # Add a label for the tab title
         label = QLabel("Voice Assistant", self)
         label.setAlignment(Qt.AlignCenter)
         label.setStyleSheet("font-size: 30px; font-weight: bold; color: white;")
         layout.addWidget(label)
 
-        activate_button = QPushButton("Activate Voice Assistant", self)
-        self.set_button_style(activate_button)
-        layout.addWidget(activate_button)
+        # Add a status label
+        self.voice_status_label = QLabel("Status: Inactive", self)
+        self.voice_status_label.setAlignment(Qt.AlignCenter)
+        self.voice_status_label.setStyleSheet("font-size: 20px; color: #cccccc;")
+        layout.addWidget(self.voice_status_label)
 
-        # Placeholder for voice assistant functionality
-        voice_instruction = QLabel("Voice assistant features will be implemented here.", self)
-        voice_instruction.setAlignment(Qt.AlignCenter)
-        voice_instruction.setStyleSheet("font-size: 20px; color: #cccccc;")  # Light gray
-        layout.addWidget(voice_instruction)
+        # Add Activate and Deactivate buttons
+        self.activate_button = QPushButton("Activate Voice Assistant", self)
+        self.set_button_style(self.activate_button)
+        self.activate_button.clicked.connect(self.activate_voice_assistant)
+        layout.addWidget(self.activate_button)
 
+        self.deactivate_button = QPushButton("Deactivate Voice Assistant", self)
+        self.set_button_style(self.deactivate_button)
+        self.deactivate_button.clicked.connect(self.deactivate_voice_assistant)
+        self.deactivate_button.setVisible(False)  # Initially hidden
+        layout.addWidget(self.deactivate_button)
+
+        # Placeholder for additional features (e.g., voice interaction UI elements)
+        self.voice_instruction = QLabel("Voice assistant features will be implemented here.", self)
+        self.voice_instruction.setAlignment(Qt.AlignCenter)
+        self.voice_instruction.setStyleSheet("font-size: 18px; color: #cccccc; margin-top: 20px;")
+        layout.addWidget(self.voice_instruction)
+
+        # Add the tab to the QTabWidget
         self.tabs.addTab(voice_tab, "Voice Assistant")
 
     def create_textual_chat_tab(self):
@@ -777,6 +855,22 @@ class LoginSignupApp(QWidget):
         label.setStyleSheet("font-size: 30px; font-weight: bold; color: white;")
         layout.addWidget(label)
 
+        self.chat_output = QTextEdit(self)
+        self.chat_output.setStyleSheet("""
+            QTextEdit {
+                background-color: #f9f9f9;
+                border: 1px solid #cccccc;
+                border-radius: 5px;
+                font-family: 'Segoe UI', Arial, sans-serif;
+                font-size: 14px;
+                color: #333333;
+                padding: 8px;
+                line-height: 1.5;
+            }
+        """)
+        self.chat_output.setReadOnly(True)
+        layout.addWidget(self.chat_output)
+
         self.chat_input = QLineEdit(self)
         self.chat_input.setPlaceholderText("Type your message here...")
         self.set_text_field_style(self.chat_input)
@@ -787,19 +881,21 @@ class LoginSignupApp(QWidget):
         send_button.clicked.connect(self.send_chat_message)
         layout.addWidget(send_button)
 
-        self.chat_output = QTextEdit(self)
-        self.chat_output.setReadOnly(True)
-        layout.addWidget(self.chat_output)
-
         self.tabs.addTab(chat_tab, "Textual Chat")
 
     def send_chat_message(self):
+        """Handle user input and communicate with Gemini AI."""
         message = self.chat_input.text().strip()
         if message:
-            self.chat_output.append(f"You: {message}")
+            self.chat_output.append(f"You: {message}")  # Display user message
             self.chat_input.clear()
-            # Placeholder for response logic
-            self.chat_output.append("Assistant: This feature is under development.")
+
+            try:
+                # Send the user's message to Gemini AI and get a response
+                response = self.fitness_ai_assistant.send_query(message)
+                self.chat_output.append(f"Assistant: {response}")  # Display AI response
+            except Exception as e:
+                self.chat_output.append(f"Assistant: Sorry, I encountered an error. {e}")
         else:
             self.chat_output.append("Assistant: Please enter a message.")
 
@@ -848,9 +944,12 @@ class LoginSignupApp(QWidget):
         palette.setBrush(QPalette.Window, QBrush(pixmap))
         self.setPalette(palette)
 
+
 if __name__ == "__main__":
     api_key = "e5968cb05a3b42a4845c016350e83f17"
+    gemini_api_key = "AIzaSyA1RJISbzG7WJ0T_ZRQIEVj_WWkhiHKml4"
+
     app = QApplication(sys.argv)
-    window = LoginSignupApp(api_key)
+    window = LoginSignupApp(api_key, gemini_api_key)
     window.show()
     sys.exit(app.exec_())

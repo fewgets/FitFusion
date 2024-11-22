@@ -1,54 +1,82 @@
-class BMI:
+import tkinter as tk
+from tkinter import ttk
+
+class ChatApp(tk.Tk):
     def __init__(self):
-        self.weight_kg = 0.0
-        self.height_m = 0.0
-        self.height_feet = 0.0
-        self.height_inches = 0.0
-        self.height_total = 0.0
-        self.weight_lb = 0.0
-
-    def get_bmi_category(self, bmi):
-        if bmi < 18.5:
-            return "You are Underweight"
-        elif 18.5 <= bmi <= 24.9:
-            return "You are Normal weight"
-        elif 25.0 <= bmi <= 29.9:
-            return "You are Overweight"
-        else:
-            return "You are Suffering from obesity"
-
-
-class BMIImperial(BMI):
-    def __init__(self, weight_lb, height_feet, height_inches):
         super().__init__()
-        self.weight_lb = weight_lb
-        self.height_feet = height_feet
-        self.height_inches = height_inches
-        self.height_total = height_feet * 12 + height_inches
+        self.title("AI Chat")
+        self.geometry("600x600")
+        self.configure(bg="#282C34")  # Theme background color
 
-    def calculate_bmi(self):
-        return (self.weight_lb / (self.height_total ** 2)) * 703
+        # Chat history container
+        self.chat_frame = ttk.Frame(self, padding="10")
+        self.chat_frame.pack(fill=tk.BOTH, expand=True)
 
+        # Scrollable text widget for chat history
+        self.chat_canvas = tk.Canvas(self.chat_frame, bg="#282C34", bd=0, highlightthickness=0)
+        self.scrollbar = ttk.Scrollbar(self.chat_frame, orient="vertical", command=self.chat_canvas.yview)
+        self.chat_canvas.configure(yscrollcommand=self.scrollbar.set)
+        self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.chat_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-class BMIMetric(BMI):
-    def __init__(self, weight_kg, height_m):
-        super().__init__()
-        self.weight_kg = weight_kg
-        self.height_m = height_m
+        self.chat_container = ttk.Frame(self.chat_canvas)
+        self.chat_canvas.create_window((0, 0), window=self.chat_container, anchor="nw")
 
-    def calculate_bmi(self):
-        return self.weight_kg / (self.height_m ** 2)
+        self.chat_container.bind("<Configure>", self._on_frame_configure)
 
+        # Input field and send button
+        self.input_frame = ttk.Frame(self, padding="5")
+        self.input_frame.pack(fill=tk.X)
 
-# Example usage:
-# BMI in Imperial system
-bmi_imperial = BMIImperial(weight_lb=180, height_feet=5, height_inches=10)
-bmi_value_imperial = bmi_imperial.calculate_bmi()
-print(f"BMI (Imperial): {bmi_value_imperial:.2f}")
-print(bmi_imperial.get_bmi_category(bmi_value_imperial))
+        self.input_field = ttk.Entry(self.input_frame, width=80, font=("Arial", 12))
+        self.input_field.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
 
-# BMI in Metric system
-bmi_metric = BMIMetric(weight_kg=81.65, height_m=1.78)
-bmi_value_metric = bmi_metric.calculate_bmi()
-print(f"BMI (Metric): {bmi_value_metric:.2f}")
-print(bmi_metric.get_bmi_category(bmi_value_metric))
+        self.send_button = ttk.Button(self.input_frame, text="Send", command=self.send_message)
+        self.send_button.pack(side=tk.RIGHT)
+
+        # Initialize a placeholder for messages
+        self.messages = []
+
+    def send_message(self):
+        user_message = self.input_field.get()
+        if user_message.strip():
+            self.add_message(user_message, user=True)
+            self.input_field.delete(0, tk.END)
+
+            # Simulate AI response
+            self.after(1000, lambda: self.add_message(f"AI response to: {user_message}", user=False))
+
+    def add_message(self, message, user=True):
+        # Create a bubble frame
+        bubble_frame = ttk.Frame(self.chat_container, padding="10", style="UserBubble.TFrame" if user else "AIBubble.TFrame")
+        bubble_frame.pack(anchor="e" if user else "w", pady=(5, 10), padx=(10, 30) if user else (30, 10))
+
+        # Bubble label
+        label = ttk.Label(bubble_frame, text=message, wraplength=400, justify="left",
+                          style="UserBubble.TLabel" if user else "AIBubble.TLabel")
+        label.pack()
+
+        # Scroll down to the latest message
+        self.chat_canvas.update_idletasks()
+        self.chat_canvas.yview_moveto(1)
+
+    def _on_frame_configure(self, event=None):
+        self.chat_canvas.configure(scrollregion=self.chat_canvas.bbox("all"))
+
+# Styling
+def setup_styles():
+    style = ttk.Style()
+    style.theme_use("clam")
+
+    # User bubble styling
+    style.configure("UserBubble.TFrame", background="#4CAF50", relief="solid", borderwidth=1)
+    style.configure("UserBubble.TLabel", background="#4CAF50", foreground="white", font=("Arial", 12), padding=5)
+
+    # AI bubble styling
+    style.configure("AIBubble.TFrame", background="#333333", relief="solid", borderwidth=1)
+    style.configure("AIBubble.TLabel", background="#333333", foreground="white", font=("Arial", 12), padding=5)
+
+if __name__ == "__main__":
+    setup_styles()
+    app = ChatApp()
+    app.mainloop()
