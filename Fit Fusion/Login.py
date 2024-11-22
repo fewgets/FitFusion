@@ -248,34 +248,127 @@ class LoginSignupApp(QWidget):
             self.current_index += 1
             self.central_widget.setCurrentIndex(self.history[self.current_index])
 
+    def set_navigation_button_style(self, button):
+        button.setStyleSheet("""
+            QPushButton {
+                font-size: 18px;
+                color: white;
+                background: transparent;
+                border: none;
+            }
+            QPushButton:hover {
+                color: #FFB74D;
+                text-decoration: underline;
+            }
+        """)
+
+    def set_cta_button_style(self, button):
+        button.setStyleSheet("""
+            QPushButton {
+                font-size: 20px;
+                font-weight: bold;
+                color: white;
+                background: linear-gradient(90deg, #FF5722, #FF9800);
+                padding: 15px 30px;
+                border: none;
+                border-radius: 25px;
+            }
+            QPushButton:hover {
+                background: linear-gradient(90deg, #FF3D00, #F57C00);
+            }
+        """)
+
     def init_main_ui(self):
-        """Initial window with Register Here options (Login/Signup)"""
+        """Enhanced Welcome Page with improved layout and functionality."""
         main_widget = QWidget()
         main_layout = QVBoxLayout(main_widget)
 
-        # Background Image for Main Window
-        self.set_background_image("background_image_dark")  # Set your downloaded background image path here
+        # HEADER SECTION
+        header_layout = QHBoxLayout()
+        header_layout.setSpacing(20)
 
-        # Title label (adjusted font size)
-        label = QLabel("Welcome to FitFusion!", self)
-        label.setStyleSheet("font-size: 50px; font-weight: bold; color: white;")
-        label.setAlignment(Qt.AlignCenter)
-        main_layout.addWidget(label)
+        # App Logo
+        logo_label = QLabel("FitFusion", self)
+        logo_label.setStyleSheet("font-size: 35px; font-weight: bold; color: #FFB74D;")
+        header_layout.addWidget(logo_label)
 
-        # Buttons for Login and Signup with modern styles
+        # Navigation Links
+        nav_links = ["About Us", "Features", "Contact"]
+        for link in nav_links:
+            nav_button = QPushButton(link, self)
+            nav_button.clicked.connect(self.dummy_placeholder)  # Placeholder functionality
+            self.set_navigation_button_style(nav_button)
+            header_layout.addWidget(nav_button)
+
+        header_layout.addStretch(1)
+        main_layout.addLayout(header_layout)
+
+        # HERO SECTION
+        hero_layout = QVBoxLayout()
+        hero_layout.setSpacing(20)
+
+        # Background Image
+        self.set_background_image("background_image_dark.png")
+
+        # Tagline
+        tagline_label = QLabel("Your Personal Fitness Journey Starts Here!", self)
+        tagline_label.setStyleSheet("font-size: 40px; font-weight: bold; color: white;")
+        tagline_label.setAlignment(Qt.AlignCenter)
+        hero_layout.addWidget(tagline_label)
+
+        # Description
+        description_label = QLabel("Track your health, plan your meals, and stay fit with FitFusion.", self)
+        description_label.setStyleSheet("font-size: 18px; color: #dddddd;")
+        description_label.setAlignment(Qt.AlignCenter)
+        hero_layout.addWidget(description_label)
+
+        main_layout.addLayout(hero_layout)
+
+        # CALL-TO-ACTION SECTION
+        cta_layout = QHBoxLayout()
+        cta_layout.setSpacing(20)
+
+        # Login Button
         btn_login = QPushButton('Login', self)
-        self.set_button_style(btn_login)
-        btn_login.setStyleSheet(btn_login.styleSheet() + "font-size: 30px; margin-top: 20px;")
-        btn_login.clicked.connect(lambda: self.switch_to_login())  # Switch to login
-        main_layout.addWidget(btn_login)
+        self.set_cta_button_style(btn_login)
+        btn_login.clicked.connect(lambda: self.switch_to_login())
+        cta_layout.addWidget(btn_login)
 
+        # Signup Button
         btn_signup = QPushButton('Signup', self)
-        self.set_button_style(btn_signup)
-        btn_signup.setStyleSheet(btn_signup.styleSheet() + "font-size: 30px; margin-top: 20px;")
-        btn_signup.clicked.connect(lambda: self.switch_to_signup())  # Switch to signup
-        main_layout.addWidget(btn_signup)
+        self.set_cta_button_style(btn_signup)
+        btn_signup.clicked.connect(lambda: self.switch_to_signup())
+        cta_layout.addWidget(btn_signup)
+
+        # Repositioned Navigation Buttons
+        back_forward_layout = QHBoxLayout()
+        btn_back = QPushButton("Back", self)
+        btn_back.clicked.connect(self.navigate_back)  # Placeholder function
+        self.set_navigation_button_style(btn_back)
+        back_forward_layout.addWidget(btn_back)
+
+        btn_forward = QPushButton("Forward", self)
+        btn_forward.clicked.connect(self.navigate_forward)  # Placeholder function
+        self.set_navigation_button_style(btn_forward)
+        back_forward_layout.addWidget(btn_forward)
+
+        main_layout.addLayout(cta_layout)
+        main_layout.addStretch(1)
+        main_layout.addLayout(back_forward_layout)
 
         self.central_widget.addWidget(main_widget)
+
+    def dummy_placeholder(self):
+        """Placeholder for navigation links."""
+        QMessageBox.information(self, "Coming Soon", "This feature is under development!")
+
+    def navigate_back(self):
+        """Placeholder for the Back button."""
+        QMessageBox.information(self, "Back", "Navigating back!")
+
+    def navigate_forward(self):
+        """Placeholder for the Forward button."""
+        QMessageBox.information(self, "Forward", "Navigating forward!")
 
     def switch_to_login(self):
         self.central_widget.setCurrentIndex(1)  # Switch to login
@@ -922,17 +1015,22 @@ class LoginSignupApp(QWidget):
         self.central_widget.setCurrentIndex(0)  # Go back to main UI
         self.add_to_history(0)  # Add main UI to history
 
-    def set_background_image(self, image_path):
-        """Set a background image for the window."""
-        pixmap = QPixmap(image_path)  # Load the image
-        if pixmap.isNull():
-            print("Failed to load background image.")
-            return
-
-        # Set the background image to the central widget
-        palette = QPalette()
-        palette.setBrush(QPalette.Window, QBrush(pixmap))
-        self.setPalette(palette)
+    def set_background_image(self, image_path=None):
+        """Set a gradient or image background."""
+        if image_path:
+            pixmap = QPixmap(image_path)
+            if pixmap.isNull():
+                print("Failed to load background image.")
+                return
+            palette = QPalette()
+            palette.setBrush(QPalette.Window, QBrush(pixmap))
+            self.setPalette(palette)
+        else:
+            self.setStyleSheet("""
+                QWidget {
+                    background: linear-gradient(to bottom, #3C3B3F, #605C3C);
+                }
+            """)
 
 
 if __name__ == "__main__":
