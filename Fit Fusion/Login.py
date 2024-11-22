@@ -563,8 +563,7 @@ class LoginSignupApp(QWidget):
         self.create_streak_tab()
         self.create_bmi_visualization_tab()
         self.create_meal_planner_tab()
-        self.create_voice_assistant_tab()
-        self.create_textual_chat_tab()
+        self.create_interactive_assistant_tab()
         self.create_help_tab()
 
         # Set the tabs widget as the central widget
@@ -782,79 +781,57 @@ class LoginSignupApp(QWidget):
             self.show_message(f"Error fetching support information: {e}")
 
     def activate_voice_assistant(self):
-        """Activate the voice assistant and simulate voice recording."""
+        """Activate the voice assistant."""
         try:
-            # Change the status and button visibility
-            self.voice_status_label.setText("Status: Active (Recording...)")
-            self.voice_status_label.setStyleSheet("font-size: 20px; color: #64B5F6;")
-            self.activate_button.setVisible(False)
-            self.deactivate_button.setVisible(True)
-            self.voice_instruction.setText("Recording your voice input. Please speak...")
+            self.assistant_status_label.setText("Status: Active (Recording...)")
+            self.assistant_status_label.setStyleSheet("font-size: 20px; color: #64B5F6;")
+            self.dynamic_button.setText("Deactivate")
+            self.chat_output.append("<b>Assistant:</b> Listening... Please speak.")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to activate the Voice Assistant: {str(e)}")
 
     def deactivate_voice_assistant(self):
-        """Deactivate the voice assistant and stop recording."""
+        """Deactivate the voice assistant."""
         try:
-            # Change the status and button visibility
-            self.voice_status_label.setText("Status: Inactive")
-            self.voice_status_label.setStyleSheet("font-size: 20px; color: #cccccc;")
-            self.activate_button.setVisible(True)
-            self.deactivate_button.setVisible(False)
-
-            # Simulate processing the recorded voice input
-            QMessageBox.information(self, "Voice Assistant", "Recording stopped. Voice input processed successfully!")
-            self.voice_instruction.setText("Voice assistant features will be implemented here.")
+            self.assistant_status_label.setText("Status: Inactive")
+            self.assistant_status_label.setStyleSheet("font-size: 20px; color: #cccccc;")
+            self.dynamic_button.setText("Record")
+            self.chat_output.append("<b>Assistant:</b> Voice recording stopped. Input processed.")
+            #QMessageBox.information(self, "Voice Assistant", "Voice input processed successfully!")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to deactivate the Voice Assistant: {str(e)}")
 
-    def create_voice_assistant_tab(self):
-        # Create the tab widget for the Voice Assistant
-        voice_tab = QWidget()
-        layout = QVBoxLayout(voice_tab)
+    def toggle_button_mode(self):
+        """Toggle the dynamic button based on chat input or recording state."""
+        if self.dynamic_button.text() == "Deactivate":
+            return  # If recording, the button stays as "Deactivate"
+        elif self.chat_input.text().strip():  # If there's text in the input field
+            self.dynamic_button.setText("Send")
+        else:  # If the input field is empty
+            self.dynamic_button.setText("Record")
 
-        # Add a label for the tab title
-        label = QLabel("Voice Assistant", self)
+    def handle_dynamic_button_action(self):
+        """Handle the action for the dynamic button."""
+        current_text = self.dynamic_button.text()
+        if current_text == "Send":
+            self.send_chat_message()
+        elif current_text == "Record":
+            self.activate_voice_assistant()
+        elif current_text == "Deactivate":
+            self.deactivate_voice_assistant()
+
+    def create_interactive_assistant_tab(self):
+        # Create the tab widget for the Interactive Assistant
+        assistant_tab = QWidget()
+        layout = QVBoxLayout(assistant_tab)
+
+        # Tab title
+        label = QLabel("Interactive Assistant", self)
         label.setAlignment(Qt.AlignCenter)
         label.setStyleSheet("font-size: 30px; font-weight: bold; color: white;")
         layout.addWidget(label)
 
-        # Add a status label
-        self.voice_status_label = QLabel("Status: Inactive", self)
-        self.voice_status_label.setAlignment(Qt.AlignCenter)
-        self.voice_status_label.setStyleSheet("font-size: 20px; color: #cccccc;")
-        layout.addWidget(self.voice_status_label)
-
-        # Add Activate and Deactivate buttons
-        self.activate_button = QPushButton("Activate Voice Assistant", self)
-        self.set_button_style(self.activate_button)
-        self.activate_button.clicked.connect(self.activate_voice_assistant)
-        layout.addWidget(self.activate_button)
-
-        self.deactivate_button = QPushButton("Deactivate Voice Assistant", self)
-        self.set_button_style(self.deactivate_button)
-        self.deactivate_button.clicked.connect(self.deactivate_voice_assistant)
-        self.deactivate_button.setVisible(False)  # Initially hidden
-        layout.addWidget(self.deactivate_button)
-
-        # Placeholder for additional features (e.g., voice interaction UI elements)
-        self.voice_instruction = QLabel("Voice assistant features will be implemented here.", self)
-        self.voice_instruction.setAlignment(Qt.AlignCenter)
-        self.voice_instruction.setStyleSheet("font-size: 18px; color: #cccccc; margin-top: 20px;")
-        layout.addWidget(self.voice_instruction)
-
-        # Add the tab to the QTabWidget
-        self.tabs.addTab(voice_tab, "Voice Assistant")
-
-    def create_textual_chat_tab(self):
-        chat_tab = QWidget()
-        layout = QVBoxLayout(chat_tab)
-
-        label = QLabel("Textual Chat", self)
-        label.setAlignment(Qt.AlignCenter)
-        label.setStyleSheet("font-size: 30px; font-weight: bold; color: white;")
-        layout.addWidget(label)
-
+        # Chat output area
         self.chat_output = QTextEdit(self)
         self.chat_output.setStyleSheet("""
             QTextEdit {
@@ -871,33 +848,46 @@ class LoginSignupApp(QWidget):
         self.chat_output.setReadOnly(True)
         layout.addWidget(self.chat_output)
 
+        # Input area and dynamic button
+        input_layout = QHBoxLayout()
+
         self.chat_input = QLineEdit(self)
-        self.chat_input.setPlaceholderText("Type your message here...")
+        self.chat_input.setPlaceholderText("Type your message here or press record...")
         self.set_text_field_style(self.chat_input)
-        layout.addWidget(self.chat_input)
+        self.chat_input.textChanged.connect(self.toggle_button_mode)
+        input_layout.addWidget(self.chat_input)
 
-        send_button = QPushButton("Send", self)
-        self.set_button_style(send_button)
-        send_button.clicked.connect(self.send_chat_message)
-        layout.addWidget(send_button)
+        self.dynamic_button = QPushButton("Record", self)
+        self.set_button_style(self.dynamic_button)
+        self.dynamic_button.clicked.connect(self.handle_dynamic_button_action)
+        input_layout.addWidget(self.dynamic_button)
 
-        self.tabs.addTab(chat_tab, "Textual Chat")
+        layout.addLayout(input_layout)
+
+        # Status label for assistant state
+        self.assistant_status_label = QLabel("Status: Inactive", self)
+        self.assistant_status_label.setAlignment(Qt.AlignCenter)
+        self.assistant_status_label.setStyleSheet("font-size: 20px; color: #cccccc;")
+        layout.addWidget(self.assistant_status_label)
+
+        # Add the tab to the QTabWidget
+        self.tabs.addTab(assistant_tab, "Interactive Assistant")
 
     def send_chat_message(self):
         """Handle user input and communicate with Gemini AI."""
         message = self.chat_input.text().strip()
         if message:
-            self.chat_output.append(f"You: {message}")  # Display user message
+            self.chat_output.append(f"<b>You:</b> {message}")
             self.chat_input.clear()
 
             try:
-                # Send the user's message to Gemini AI and get a response
                 response = self.fitness_ai_assistant.send_query(message)
-                self.chat_output.append(f"Assistant: {response}")  # Display AI response
+                formatted_response = response.replace("*", "").replace("\n", "<br>")
+                self.chat_output.append(f"<b>Assistant:</b> {formatted_response}")
             except Exception as e:
-                self.chat_output.append(f"Assistant: Sorry, I encountered an error. {e}")
+                self.chat_output.append(f"<b>Assistant:</b> Sorry, I encountered an error: {e}")
         else:
-            self.chat_output.append("Assistant: Please enter a message.")
+            self.chat_output.append("<b>Assistant:</b> Please enter a message or use the voice assistant.")
 
     def create_help_tab(self):
         help_tab = QWidget()
