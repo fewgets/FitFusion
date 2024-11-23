@@ -19,6 +19,13 @@ import pyttsx3  # For text-to-speech
 from gtts import gTTS  # Optional alternative for text-to-speech
 import os  # To handle audio playback
 
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
+import mplcursors
+
+
+
 class BMI:
     def __init__(self):
         self.weight_kg = 0.0
@@ -804,9 +811,6 @@ class LoginSignupApp(QWidget):
         self.tabs.addTab(streak_tab, "Streak")
 
 
-
-
-
     def create_bmi_visualization_tab(self):
         bmi_tab = QWidget()
         layout = QVBoxLayout(bmi_tab)
@@ -839,7 +843,21 @@ class LoginSignupApp(QWidget):
         # Create a text field to show the BMI result
         self.bmi_output = QLineEdit(self)
         self.bmi_output.setReadOnly(True)  # Make it read-only
+        self.bmi_output.setStyleSheet("""
+            background-color: #f0f0f0;
+            font-size: 18px;          /* Increased font size */
+            padding: 10px;            /* Increased padding */
+            border: 2px solid #E1BEE7;  /* Light purple border */
+            border-radius: 5px;
+            height: 20px;             /* Increased height */
+            /* Added margin for spacing */
+        """)
         layout.addWidget(self.bmi_output)
+
+        # Create a canvas for the plot
+        self.canvas = FigureCanvas(Figure(figsize=(6, 4)))  # Slightly larger canvas
+        self.canvas.setStyleSheet("border: 2px solid #E1BEE7; border-radius: 10px;")
+        layout.addWidget(self.canvas)
 
         self.tabs.addTab(bmi_tab, "BMI")
 
@@ -856,8 +874,43 @@ class LoginSignupApp(QWidget):
             # Display the BMI value and category in the text field
             self.bmi_output.setText(f"BMI Value: {bmi_value:.2f}, Category: {bmi_category}")
 
+            # Plot the BMI value
+            self.plot_bmi(bmi_value, bmi_category)
+
         except ValueError:
             self.bmi_output.setText("Please enter valid numbers for weight, height, and age.")
+
+    def plot_bmi(self, bmi_value, bmi_category):
+        categories = ['Underweight', 'Normal weight', 'Overweight', 'Obesity']
+        values = [18.5, 24.9, 29.9, 40]
+
+        # Clear the canvas
+        self.canvas.figure.clear()
+
+        # Create the plot
+        ax = self.canvas.figure.add_subplot(111)
+        bars = ax.bar(categories, values, color=['#42a5f5', '#66bb6a', '#ffa726', '#ef5350'], edgecolor='white',
+                      linewidth=2)
+        ax.axhline(bmi_value, color='#8e24aa', linestyle='--', linewidth=2)
+        ax.text(3.5, bmi_value, f'Your BMI: {bmi_value:.2f}', color='#8e24aa', fontsize=12, ha='right', va='bottom')
+        ax.set_facecolor('#f3e5f5')  # Light purple background for the plot
+
+        # Add labels and title with modern fonts
+        ax.set_title("BMI Categories", fontsize=20, fontweight='bold', color='#d81b60')
+        ax.set_xlabel("Categories", fontsize=16, color='#333')
+        ax.set_ylabel("BMI Values", fontsize=16, color='#333')
+        ax.tick_params(axis='x', labelsize=12, colors='#333')
+        ax.tick_params(axis='y', labelsize=12, colors='#333')
+
+        # Add interactive tooltips
+        cursor = mplcursors.cursor(bars, hover=True)
+        cursor.connect("add", lambda sel: sel.annotation.set_text(
+            f'BMI Category: {categories[sel.index]}\nBMI Value: {values[sel.index]}'))
+        cursor.connect("add", lambda sel: sel.annotation.set_bbox(
+            {"boxstyle": "round,pad=0.5", "fc": "#e1bee7", "ec": "#8e24aa"}))
+
+        # Update canvas
+        self.canvas.draw()
 
     def create_meal_planner_tab(self):
         meal_tab = QWidget()
@@ -918,16 +971,9 @@ class LoginSignupApp(QWidget):
 
 
 
-    def get_fitness_support(self):
-        # Placeholder for Fitness Support API call
-        try:
-            response = requests.get("https://api.fitnesssupport.com/getSupport")  # Replace with actual API URL
-            response.raise_for_status()
-            support_info = response.json()
-            support_message = support_info.get("message", "No support information available.")
-            self.show_message(support_message)
-        except requests.exceptions.RequestException as e:
-            self.show_message(f"Error fetching support information: {e}")
+
+
+
 
     def activate_voice_assistant(self):
         """Activate the voice assistant with enhanced visual and audio feedback."""
@@ -1151,6 +1197,12 @@ class LoginSignupApp(QWidget):
         """Format the assistant's response to ensure consistency and readability."""
         return response.strip().replace("*", "").replace("\n", " ")
 
+
+
+
+
+
+
     def create_help_tab(self):
         help_tab = QWidget()
         layout = QVBoxLayout(help_tab)
@@ -1172,6 +1224,10 @@ class LoginSignupApp(QWidget):
             layout.addWidget(faq_label)
 
         self.tabs.addTab(help_tab, "Help")
+
+
+
+
 
     def show_message(self, message):
         """Display a message in a dialog."""
