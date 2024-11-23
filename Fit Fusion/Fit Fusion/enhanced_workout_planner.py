@@ -1,5 +1,9 @@
 import datetime
 import sys
+import logging
+import playsound  # To play audio cues
+import threading
+from PyQt5.QtGui import QMovie  # For animated GIFs
 import sqlite3
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QStackedWidget, \
     QTabWidget, QSizePolicy, QHBoxLayout, QMessageBox, QTextEdit, QSlider, QComboBox
@@ -121,19 +125,9 @@ class WorkoutPlanner:
     def __init__(self, api_key):
         self.api_key = api_key
 
-    def get_exercises(self, muscle=None, name=None, exercise_type=None):
-        base_url = 'https://api.api-ninjas.com/v1/exercises'
-        params = {}
-
-        # Add query parameters if they are provided
-        if muscle:
-            params['muscle'] = muscle
-        if name:
-            params['name'] = name
-        if exercise_type:
-            params['type'] = exercise_type
-
-        response = requests.get(base_url, headers={'X-Api-Key': self.api_key}, params=params)
+    def get_exercises_by_muscle(self, muscle):
+        api_url = f'https://api.api-ninjas.com/v1/exercises?muscle={muscle}'
+        response = requests.get(api_url, headers={'X-Api-Key': self.api_key})
 
         if response.status_code == requests.codes.ok:
             return response.json()
@@ -158,6 +152,8 @@ class WorkoutPlanner:
             details += f"Instructions: {exercise['instructions']}<br>"
             details += f"Allocated Time: {time_per_exercise:.2f} seconds<br><br>"
         return details
+
+
 
 class LoginSignupApp(QWidget):
     def __init__(self, api_key,gemini_api_key):
@@ -610,131 +606,53 @@ class LoginSignupApp(QWidget):
 
         # Use stretch to ensure resizing affects tab size properly
         tabs_layout.setStretch(0, 1)  # Allow the tab widget to stretch
-
     def create_workout_planner_tab(self):
         workout_tab = QWidget()
         layout = QVBoxLayout(workout_tab)
 
-        # Title with updated label color closer to the theme
+        # Title
         label = QLabel("Workout Planner", self)
         label.setAlignment(Qt.AlignCenter)
-        label.setStyleSheet("""
-            font-size: 30px;
-            font-weight: bold;
-            color: #D81B60;  /* Soft pink for the label text */
-            background-color: #F3E5F5;  /* Very light lavender for the background */
-            padding: 10px;
-        """)
+        label.setStyleSheet("font-size: 30px; font-weight: bold; color: white;")
         layout.addWidget(label)
 
-        # Muscle Group Label
-        muscle_group_label = QLabel("Muscle Group:", self)
-        muscle_group_label.setStyleSheet("font-size: 16px; color: white;")
-        layout.addWidget(muscle_group_label)
-
-        # Muscle Group ComboBox
-        self.muscle_group_combo = QComboBox(self)
-        self.muscle_group_combo.addItems([
-            "","Abdominals", "Abductors", "Adductors", "Biceps", "Calves",
-            "Chest", "Forearms", "Glutes", "Hamstrings", "Lats", "Lower Back",
-            "Middle Back", "Neck", "Quadriceps", "Traps", "Triceps"
-        ])
-        self.muscle_group_combo.setStyleSheet("""
-            background-color: #f0f0f0;
-            font-size: 16px;
-            padding: 5px;
-            border: 2px solid #E1BEE7;  /* Light purple border */
-            border-radius: 5px;
-        """)
-        layout.addWidget(self.muscle_group_combo)
-
-        # Exercise Name Label
-        exercise_name_label = QLabel("Exercise Name:", self)
-        exercise_name_label.setStyleSheet("font-size: 16px; color: white;")
-        layout.addWidget(exercise_name_label)
-
-        # Exercise Name Input
+        # Exercise Name Input (Optional)
         self.exercise_name_input = QLineEdit(self)
-        self.exercise_name_input.setPlaceholderText("Partial Exercise Name (e.g., press, squat)")
-        self.exercise_name_input.setStyleSheet("""
-            background-color: #f0f0f0;
-            font-size: 16px;
-            padding: 5px;
-            border: 2px solid #E1BEE7;  /* Light purple border */
-            border-radius: 5px;
-        """)
+        self.exercise_name_input.setPlaceholderText("Exercise Name (partial match allowed)")
+        self.set_text_field_style(self.exercise_name_input)
         layout.addWidget(self.exercise_name_input)
 
-        # Exercise Type Label
-        exercise_type_label = QLabel("Exercise Type:", self)
-        exercise_type_label.setStyleSheet("font-size: 16px; color: white;")
-        layout.addWidget(exercise_type_label)
-
         # Exercise Type ComboBox
-        self.exercise_type_combo = QComboBox(self)
-        self.exercise_type_combo.addItems([
-          "","Cardio", "Olympic Weightlifting", "Plyometrics", "Powerlifting",
-            "Strength", "Stretching", "Strongman"
+        self.type_combo = QComboBox(self)
+        self.type_combo.addItems([
+            "Any Type", "cardio", "olympic_weightlifting", "plyometrics",
+            "powerlifting", "strength", "stretching", "strongman"
         ])
-        self.exercise_type_combo.setStyleSheet("""
-            background-color: #f0f0f0;
-            font-size: 16px;
-            padding: 5px;
-            border: 2px solid #E1BEE7;  /* Light purple border */
-            border-radius: 5px;
-        """)
-        layout.addWidget(self.exercise_type_combo)
+        layout.addWidget(self.type_combo)
 
-        # Difficulty Label
-        difficulty_label = QLabel("Difficulty Level:", self)
-        difficulty_label.setStyleSheet("font-size: 16px; color: white;")
-        layout.addWidget(difficulty_label)
+        # Muscle Group ComboBox
+        self.muscle_combo = QComboBox(self)
+        self.muscle_combo.addItems([
+            "Any Muscle", "abdominals", "abductors", "adductors", "biceps",
+            "calves", "chest", "forearms", "glutes", "hamstrings", "lats",
+            "lower_back", "middle_back", "neck", "quadriceps", "traps", "triceps"
+        ])
+        layout.addWidget(self.muscle_combo)
 
         # Difficulty ComboBox
         self.difficulty_combo = QComboBox(self)
-        self.difficulty_combo.addItems(["","Beginner", "Intermediate", "Expert"])
-        self.difficulty_combo.setStyleSheet("""
-            background-color: #f0f0f0;
-            font-size: 16px;
-            padding: 5px;
-            border: 2px solid #E1BEE7;  /* Light purple border */
-            border-radius: 5px;
-        """)
+        self.difficulty_combo.addItems(["Any Difficulty", "beginner", "intermediate", "expert"])
         layout.addWidget(self.difficulty_combo)
 
-        # Duration Label
-        duration_label = QLabel("Workout Duration (minutes):", self)
-        duration_label.setStyleSheet("font-size: 16px; color: white;")
-        layout.addWidget(duration_label)
-
-        # Duration Input
+        # Workout Duration Input
         self.workout_duration_input = QLineEdit(self)
-        self.workout_duration_input.setPlaceholderText("Workout Duration (minutes, e.g., 45)")
-        self.workout_duration_input.setStyleSheet("""
-            background-color: #f0f0f0;
-            font-size: 16px;
-            padding: 5px;
-            border: 2px solid #E1BEE7;  /* Light purple border */
-            border-radius: 5px;
-        """)
+        self.workout_duration_input.setPlaceholderText("Workout Duration (minutes)")
+        self.set_text_field_style(self.workout_duration_input)
         layout.addWidget(self.workout_duration_input)
 
         # Generate Button
         generate_button = QPushButton("Generate Workout Plan", self)
-        generate_button.setStyleSheet("""
-            QPushButton {
-                background-color: #E1BEE7;  /* Light purple background */
-                color: black;               /* Black text for contrast */
-                font-size: 18px;            /* Increased font size */
-                padding: 10px 20px;         /* Padding for better visibility */
-                border: 1px solid #ccc;     /* Border around buttons */
-                border-radius: 4px;         /* Rounded corners */
-                cursor: pointer;           /* Change cursor to pointer */
-            }
-            QPushButton:hover {
-                background-color: #D5006D;  /* Darker purple on hover */
-            }
-        """)
+        self.set_button_style(generate_button)
         generate_button.clicked.connect(self.generate_workout_plan)
         layout.addWidget(generate_button)
 
@@ -743,11 +661,9 @@ class LoginSignupApp(QWidget):
         self.workout_plan_output.setReadOnly(True)
         self.workout_plan_output.setStyleSheet("""
             background-color: #f9f9f9;
-            font-size: 16px;
+            border: 1px solid #cccccc;
+            font-size: 14px;
             padding: 10px;
-            border: 2px solid #E1BEE7;  /* Light purple border */
-            border-radius: 5px;
-            color: #333;
         """)
         layout.addWidget(self.workout_plan_output)
 
@@ -755,27 +671,22 @@ class LoginSignupApp(QWidget):
         self.tabs.addTab(workout_tab, "Workouts")
 
     def generate_workout_plan(self):
-        muscle_group = self.muscle_group_combo.currentText()
-        exercise_name = self.exercise_name_input.text().strip()
-        exercise_type = self.exercise_type_combo.currentText()
-        difficulty = self.difficulty_combo.currentText()
+        name = self.exercise_name_input.text().strip()  # Optional exercise name
+        exercise_type = self.type_combo.currentText() if self.type_combo.currentText() != "Any Type" else None
+        muscle = self.muscle_combo.currentText() if self.muscle_combo.currentText() != "Any Muscle" else None
+        difficulty = self.difficulty_combo.currentText() if self.difficulty_combo.currentText() != "Any Difficulty" else None
 
         try:
             total_time = float(self.workout_duration_input.text().strip())
         except ValueError:
-            self.workout_plan_output.setPlainText("Please enter a valid number for duration.")
-            return
-
-        if not muscle_group and not exercise_name and not exercise_type:
-            self.workout_plan_output.setPlainText("Please specify at least one filter.")
+            self.workout_plan_output.setPlainText("Please enter a valid number for workout duration.")
             return
 
         # Fetch exercises using the API
         planner = WorkoutPlanner(api_key="1c55tgO/oZW1c40Dtz+PxQ==hGupNoi6khvXO6Xv")
-        exercises = planner.get_exercises(muscle=muscle_group, name=exercise_name, exercise_type=exercise_type)
-
-        if difficulty:
-            exercises = planner.filter_exercises(exercises, 'difficulty', difficulty)
+        exercises = planner.get_exercises(
+            name=name, exercise_type=exercise_type, muscle=muscle, difficulty=difficulty
+        )
 
         # Format and display the workout plan
         formatted_plan = planner.format_exercise_details(exercises, total_time)
@@ -1205,3 +1116,5 @@ if __name__ == "__main__":
     window = LoginSignupApp(api_key, gemini_api_key)
     window.show()
     sys.exit(app.exec_())
+
+
