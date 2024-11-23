@@ -1,149 +1,208 @@
-import sys
-import sqlite3
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QStackedWidget, \
-    QTextEdit, QMessageBox
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPixmap, QPalette, QBrush
 import google.generativeai as genai
-import speech_recognition as sr  # Added for voice recognition
-
-
+import speech_recognition as sr
+import pyttsx3
+import webbrowser
+import re
+import threading
+import queue
 
 class FitnessAIAssistant:
-    def __init__(self, api_key):
-        """Initialize the Fitness AI Assistant."""
+    def __init__(self, api_key: str):
+        """Initialize the Fitness AI Assistant with Gemini API"""
+        # Initialization code here
+
+        """Initialize the Fitness AI Assistant with Gemini API"""
         self.api_key = api_key
-        try:
-            print("Initializing FitnessAIAssistant...")
-            genai.configure(api_key=self.api_key)
-            self.model = genai.GenerativeModel('gemini-pro')
-            self.system_prompt = "You are an expert in fitness, health, and nutrition."
-            self.chat = None
-            self.initialize_chat()
-            print("FitnessAIAssistant initialized successfully.")
-        except Exception as e:
-            print(f"Error initializing FitnessAIAssistant: {e}")
+        # Configure the Gemini API
+        genai.configure(api_key=self.api_key)
+
+        # Set up the model
+        self.model = genai.GenerativeModel('gemini-pro')
+
+        # Initialize chat with fitness context
+        self.chat = self.model.start_chat(history=[])
+
+        # Define the fitness trainer persona
+        self.system_prompt = """
+        You are FitFusion AI, an expert fitness and nutrition coach with years of experience in personal training 
+        and dietary planning. Your role is to:
+
+        1. Provide personalized fitness advice and workout recommendations
+        2. Offer nutrition guidance and meal planning suggestions
+        3. Help users understand their BMI and health metrics
+        4. Motivate users to achieve their fitness goals
+        5. Answer health and wellness-related questions
+        6. Provide scientific, evidence-based information
+        7. Maintain a supportive and encouraging tone
+
+        Important Guidelines:
+        - Always prioritize safety and proper form in exercise recommendations
+        - Consider user's fitness level and any mentioned health conditions
+        - Provide practical, actionable advice
+        - Encourage sustainable healthy habits over quick fixes
+        - Be supportive and motivational in your responses
+        - If asked about medical conditions, remind users to consult healthcare professionals
+
+        Begin by introducing yourself and asking about the user's fitness goals.
+        """
+
+        # Initialize Text-to-Speech engine
+        self.tts_engine = pyttsx3.init()
+        self.tts_engine.setProperty('rate', 150)  # Adjust speech rate
+
+        # Initialize speech task queue
+        self.speech_queue = queue.Queue()
+
+        # Start a thread to process the speech tasks (text-to-speech output)
+        self.speech_thread = threading.Thread(target=self.process_speech, daemon=True)
+        self.speech_thread.start()
+
+        # Initialize the chat with the system prompt
+        self.initialize_chat()
 
     def initialize_chat(self):
-        """Initialize chat session with Generative AI."""
+        """Initialize the chat with the system prompt"""
         try:
             self.chat = self.model.start_chat(history=[])
-            self.chat.send_message(self.system_prompt)
-            print("Chat initialized with system prompt.")
+            response = self.chat.send_message(self.system_prompt)
+            self.enqueue_speech(response.text)  # Add both text and speech
+            print(response.text)  # Print response in console
         except Exception as e:
-            print(f"Error during chat initialization: {e}")
+            self.enqueue_speech(f"Error initializing chat: {str(e)}")
 
-    def send_query(self, query: str) -> str:
-        """Send a query to the AI model."""
+    def send_query(self, user_query: str) -> str:
+        """Send a query to the AI and get response"""
         try:
-            if not self.chat:
-                self.initialize_chat()
-            response = self.chat.send_message(query)
-            print(f"AI Response: {response.text}")
+            response = self.chat.send_message(user_query)
+            self.enqueue_speech(response.text)  # Add both text and speech
+            print(response.text)  # Print response in console
             return response.text
         except Exception as e:
-            print(f"Error sending query: {e}")
-            return "Sorry, there was an error processing your query."
+            self.enqueue_speech(f"Error communicating with AI: {str(e)}")
 
+    def enqueue_speech(self, text: str):
+        """Add speech text to the queue"""
+        self.speech_queue.put(text)
 
-class LoginSignupApp(QWidget):
-    def __init__(self, api_key, gemini_api_key):
-        """Initialize the application."""
-        super().__init__()
-        self.fitness_ai = FitnessAIAssistant(gemini_api_key)
-        self.recognizer = sr.Recognizer()
-        self.microphone = sr.Microphone()
+    def process_speech(self):
+        """Process speech tasks from the queue"""
+        while True:
+            text = self.speech_queue.get()
+            if text:
+                self.speak(text)
+            self.speech_queue.task_done()
 
-        self.setWindowTitle("Fitness App")
-        self.setGeometry(100, 100, 800, 600)
+    def speak(self, text: str):
+        """Speak the provided text"""
+        self.tts_engine.say(text)
+        self.tts_engine.runAndWait()
 
-        self.central_widget = QStackedWidget(self)
-        layout = QVBoxLayout(self)
-        layout.addWidget(self.central_widget)
+    def listen(self) -> str:
+        """Listen for audio input from the user and convert to text"""
+        recognizer = sr.Recognizer()
+        microphone = sr.Microphone()
 
-        self.init_main_ui()
-        self.init_chat_ui()
+        with microphone as source:
+            print("Listening for your question...")
+            recognizer.adjust_for_ambient_noise(source)  # To handle background noise
+            audio = recognizer.listen(source)
 
-        self.central_widget.setCurrentIndex(0)
-
-    def init_main_ui(self):
-        """Initialize the main UI."""
-        main_widget = QWidget()
-        layout = QVBoxLayout(main_widget)
-
-        label = QLabel("Welcome to the Fitness App!")
-        label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(label)
-
-        btn_chat = QPushButton("Chat with Assistant")
-        btn_chat.clicked.connect(self.show_chat_ui)
-        layout.addWidget(btn_chat)
-
-        self.central_widget.addWidget(main_widget)
-
-    def init_chat_ui(self):
-        """Initialize the chat UI."""
-        chat_widget = QWidget()
-        layout = QVBoxLayout(chat_widget)
-
-        self.chat_output = QTextEdit()
-        self.chat_output.setReadOnly(True)
-        layout.addWidget(self.chat_output)
-
-        self.chat_input = QLineEdit()
-        self.chat_input.setPlaceholderText("Type your message or press 'Voice'")
-        layout.addWidget(self.chat_input)
-
-        btn_send = QPushButton("Send")
-        btn_send.clicked.connect(self.handle_text_input)
-        layout.addWidget(btn_send)
-
-        btn_voice = QPushButton("Voice")
-        btn_voice.clicked.connect(self.handle_voice_input)
-        layout.addWidget(btn_voice)
-
-        self.central_widget.addWidget(chat_widget)
-
-    def show_chat_ui(self):
-        """Switch to chat UI."""
-        self.central_widget.setCurrentIndex(1)
-
-    def handle_text_input(self):
-        """Handle text input from the user."""
-        user_query = self.chat_input.text().strip()
-        if not user_query:
-            QMessageBox.warning(self, "Input Error", "Please enter a message.")
-            return
-        self.chat_output.append(f"You: {user_query}")
-        self.chat_input.clear()
-        response = self.fitness_ai.send_query(user_query)
-        self.chat_output.append(f"Assistant: {response}")
-
-    def handle_voice_input(self):
-        """Handle voice input."""
         try:
-            with self.microphone as source:
-                self.chat_output.append("Listening for your voice...")
-                self.recognizer.adjust_for_ambient_noise(source)
-                audio = self.recognizer.listen(source)
-
-            voice_query = self.recognizer.recognize_google(audio)
-            self.chat_output.append(f"You (Voice): {voice_query}")
-            response = self.fitness_ai.send_query(voice_query)
-            self.chat_output.append(f"Assistant: {response}")
+            print("You said: ", end="")
+            query = recognizer.recognize_google(audio)
+            print(query)
+            return query
         except sr.UnknownValueError:
-            self.chat_output.append("Sorry, I didn't catch that. Please try again.")
-        except sr.RequestError as e:
-            self.chat_output.append(f"Error accessing voice recognition service: {e}")
-        except Exception as e:
-            self.chat_output.append(f"Error: {e}")
+            print("Sorry, I did not understand that.")
+            return "Sorry, I did not understand that."
+        except sr.RequestError:
+            print("Sorry, I'm having trouble connecting to the speech recognition service.")
+            return "Sorry, I'm having trouble connecting to the speech recognition service."
 
+    def open_website(self, command: str):
+        """Open websites based on user command"""
+        if 'open youtube' in command.lower():
+            webbrowser.open("https://www.youtube.com")
+            self.enqueue_speech("Opening YouTube")
+        elif 'open google' in command.lower():
+            webbrowser.open("https://www.google.com")
+            self.enqueue_speech("Opening Google")
+        elif 'search' in command.lower():
+            search_query = self.extract_search_query(command)
+            if search_query:
+                search_url = f"https://www.google.com/search?q={search_query}"
+                webbrowser.open(search_url)
+                self.enqueue_speech(f"Searching for {search_query} on Google")
+            else:
+                self.enqueue_speech("Sorry, I could not find a search query.")
+        else:
+            self.enqueue_speech("Sorry, I cannot recognize that command.")
 
-if __name__ == "__main__":
-    api_key = "e5968cb05a3b42a4845c016350e83f17"
+    def extract_search_query(self, command: str) -> str:
+        """Extract search query from the user's command"""
+        search_pattern = r"search\s+(.+)"
+        match = re.search(search_pattern, command.lower())
+        if match:
+            return match.group(1)
+        return None
+
+# Main Program: Example of interaction with voice input and output
+def main():
     gemini_api_key = "AIzaSyA1RJISbzG7WJ0T_ZRQIEVj_WWkhiHKml4"
 
-    app = QApplication(sys.argv)
-    window = LoginSignupApp(api_key, gemini_api_key)
-    window.show()
-    sys.exit(app.exec_())
+    # Initialize the Fitness AI assistant
+    fitness_ai = FitnessAIAssistant(gemini_api_key)
+
+    print("\n=== Welcome to FitFusion AI - Your Personal Fitness Coach! ===")
+    print("I'm here to help you achieve your fitness goals and maintain a healthy lifestyle.")
+    fitness_ai.enqueue_speech("Hello, I am your personal fitness assistant. How would you like to interact with me?")
+
+    # Ask the user for their interaction choice (voice or text) only once
+    if not hasattr(fitness_ai, 'interaction_choice'):
+        print("\nWould you like to interact via:")
+        print("1. Voice")
+        print("2. Text")
+        fitness_ai.interaction_choice = input("Enter 1 or 2: ").strip().lower()
+
+    while True:
+        # If user chooses voice, listen for commands
+        if fitness_ai.interaction_choice == "1":
+            user_input = fitness_ai.listen()
+
+            if user_input.lower() == "exit":
+                fitness_ai.enqueue_speech("Goodbye! Stay healthy and keep moving!")
+                break
+
+            # Check if the user command includes a website or search query
+            if 'open' in user_input.lower() or 'search' in user_input.lower():
+                fitness_ai.open_website(user_input)
+            else:
+                # Send the query to the AI and get the response
+                ai_response = fitness_ai.send_query(user_input)
+                print("AI Response: ", ai_response)
+
+        # If user chooses text, handle text-based interaction
+        elif fitness_ai.interaction_choice == "2":
+            user_input = input("You can ask questions or give commands: ").strip().lower()
+
+            if user_input == "exit":
+                fitness_ai.enqueue_speech("Goodbye! Stay healthy and keep moving!")
+                break
+
+            # Check if the user command includes a website or search query
+            if 'open' in user_input or 'search' in user_input:
+                fitness_ai.open_website(user_input)
+            else:
+                # Send the query to the AI and get the response
+                ai_response = fitness_ai.send_query(user_input)
+                print("AI Response: ", ai_response)
+
+            # Allow switching between text and voice modes
+            if 'switch to voice' in user_input:
+                fitness_ai.interaction_choice = "1"
+                fitness_ai.enqueue_speech("Switching to voice mode.")
+            elif 'switch to text' in user_input:
+                fitness_ai.interaction_choice = "2"
+                fitness_ai.enqueue_speech("Switching to text mode.")
+if __name__ == "__main__":
+    main()

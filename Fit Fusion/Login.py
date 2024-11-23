@@ -14,6 +14,11 @@ from PyQt5.QtGui import QMovie  # For animated GIFs
 import time
 import playsound  # To play audio cues
 
+
+import pyttsx3  # For text-to-speech
+from gtts import gTTS  # Optional alternative for text-to-speech
+import os  # To handle audio playback
+
 class BMI:
     def __init__(self):
         self.weight_kg = 0.0
@@ -795,59 +800,61 @@ class LoginSignupApp(QWidget):
     def activate_voice_assistant(self):
         """Activate the voice assistant with enhanced visual and audio feedback."""
         self.voice_assistant_active = True
-        self.assistant_status_label.setText("Listening...")
-        self.assistant_status_label.setStyleSheet("font-size: 20px; color: #64B5F6;")
+        self.dynamic_button.setText("Stop Recording")  # Change button label
+        self.assistant_status_label.setText("🎤 Listening...")
+        self.assistant_status_label.setStyleSheet("font-size: 20px; color: green; font-weight: bold;")
 
-        # Start visual feedback: Animated microphone
+        # Start animated visual feedback
         self.start_recording_visual_feedback()
 
         # Play a sound to indicate recording start
         threading.Thread(target=lambda: self.play_sound("start_sound.mp3"), daemon=True).start()
 
         def listen():
-            while self.voice_assistant_active:
-                try:
+            try:
+                while self.voice_assistant_active:
                     with self.microphone as source:
                         # Adjust for ambient noise and start listening
                         self.recognizer.adjust_for_ambient_noise(source)
-                        audio = self.recognizer.listen(source, timeout=5, phrase_time_limit=10)
+                        audio = self.recognizer.listen(source, timeout=1, phrase_time_limit=2)
 
-                        # Play a sound to indicate recording stop
-                        threading.Thread(target=lambda: self.play_sound("stop_sound.mp3"), daemon=True).start()
-
-                        # Stop visual feedback
-                        self.stop_recording_visual_feedback()
-
-                        # Process the audio input
-                        try:
-                            command = self.recognizer.recognize_google(audio)
-                            self.chat_output.append(
-                                f"<b>You (Voice)<b> ({datetime.datetime.now().strftime('%H:%M')}): {command}")
-                            self.process_voice_command(command)
-                        except sr.UnknownValueError:
-                            self.chat_output.append("</b>Assistant</b>: Sorry, I couldn't understand that.")
-                        except sr.RequestError as e:
-                            self.chat_output.append(f"<b>Assistant</b>: Error with voice recognition service: {e}")
-                except sr.WaitTimeoutError:
-                    self.chat_output.append("<b>Assistant</b>: No input detected. Please try again.")
-                    self.stop_recording_visual_feedback()
-                    break
-                except Exception as e:
-                    if self.voice_assistant_active:
-                        QMessageBox.critical(self, "Error", f"Voice Assistant Error: {str(e)}")
-                        self.stop_recording_visual_feedback()
+                    # Stop recording if the user presses "Stop"
+                    if not self.voice_assistant_active:
                         break
+
+                    # Play a sound to indicate recording stop
+                    threading.Thread(target=lambda: self.play_sound("stop_sound.mp3"), daemon=True).start()
+
+                    # Stop visual feedback
+                    self.stop_recording_visual_feedback()
+
+                    # Process the audio input
+                    try:
+                        command = self.recognizer.recognize_google(audio)
+                        self.chat_output.append(
+                            f"<b>You (Voice)</b> ({datetime.datetime.now().strftime('%H:%M')}): {command}")
+                        self.process_voice_command(command)
+                    except sr.UnknownValueError:
+                        self.chat_output.append("<b>Assistant</b>: Sorry, I couldn't understand that.")
+                    except sr.RequestError as e:
+                        self.chat_output.append(f"<b>Assistant</b>: Error with voice recognition service: {e}")
+            except sr.WaitTimeoutError:
+                self.chat_output.append("<b>Assistant</b>: No input detected. Please try again.")
+                self.stop_recording_visual_feedback()
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Voice Assistant Error: {str(e)}")
+                self.stop_recording_visual_feedback()
+            finally:
+                self.deactivate_voice_assistant()  # Ensure cleanup
 
         threading.Thread(target=listen, daemon=True).start()
 
     def start_recording_visual_feedback(self):
         """Start the visual feedback for recording."""
-        # Animated microphone icon
-        self.mic_animation = QMovie("mic_listening.gif")  # Path to animated microphone GIF
+        self.mic_animation = QMovie("mic_listening.gif")  # Animated microphone icon
         self.mic_label.setMovie(self.mic_animation)
         self.mic_animation.start()
 
-        # Show a recording timer
         self.recording_timer_start = time.time()
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_recording_timer)
@@ -855,8 +862,8 @@ class LoginSignupApp(QWidget):
 
     def stop_recording_visual_feedback(self):
         """Stop the visual feedback for recording."""
-        self.assistant_status_label.setText("Recording Stopped.")
-        self.assistant_status_label.setStyleSheet("font-size: 20px; color: #cccccc;")
+        self.assistant_status_label.setText("🔴 Recording Stopped.")
+        self.assistant_status_label.setStyleSheet("font-size: 20px; color: gray;")
         if hasattr(self, "mic_animation") and self.mic_animation:
             self.mic_animation.stop()
             self.mic_label.clear()
@@ -867,7 +874,7 @@ class LoginSignupApp(QWidget):
         """Update the timer for how long the recording has been active."""
         elapsed_time = int(time.time() - self.recording_timer_start)
         minutes, seconds = divmod(elapsed_time, 60)
-        self.assistant_status_label.setText(f"Listening... {minutes}:{seconds:02}")
+        self.assistant_status_label.setText(f"🎤 Listening... {minutes}:{seconds:02}")
 
     def play_sound(self, file_path):
         """Play a sound file."""
@@ -896,11 +903,12 @@ class LoginSignupApp(QWidget):
             self.chat_output.append(f"<b>Assistant</b>: {formatted_response}")
 
     def deactivate_voice_assistant(self):
-        """Deactivate the voice assistant and provide feedback."""
+        """Deactivate the voice assistant and reset UI state."""
         self.voice_assistant_active = False
-        self.assistant_status_label.setText("Status: Inactive")
-        self.assistant_status_label.setStyleSheet("font-size: 20px; color: #cccccc;")
-        self.dynamic_button.setText("Record")
+        self.assistant_status_label.setText("🔴 Status: Inactive")
+        self.assistant_status_label.setStyleSheet("font-size: 20px; color: gray;")
+        self.dynamic_button.setText("Record")  # Reset button label
+        self.stop_recording_visual_feedback()
         self.chat_output.append("<b>Assistant</b>: Voice assistant deactivated.")
 
     def toggle_button_mode(self):
@@ -913,14 +921,14 @@ class LoginSignupApp(QWidget):
             self.dynamic_button.setText("Record")
 
     def handle_dynamic_button_action(self):
-            """Handle actions for the dynamic button based on its current state."""
-            current_text = self.dynamic_button.text()
-            if current_text == "Send":
-                self.send_chat_message()
-            elif current_text == "Record":
-                self.activate_voice_assistant()
-            elif current_text == "Deactivate":
-                self.deactivate_voice_assistant()
+        """Handle actions for the dynamic button based on its current state."""
+        current_text = self.dynamic_button.text()
+        if current_text == "Send":
+            self.send_chat_message()
+        elif current_text == "Record":
+            self.activate_voice_assistant()
+        elif current_text == "Stop Recording":
+            self.deactivate_voice_assistant()
 
     def create_interactive_assistant_tab(self):
         """Create the interactive assistant tab with enhanced chat and voice features."""
@@ -930,7 +938,7 @@ class LoginSignupApp(QWidget):
 
 
         # Tab title
-        label = QLabel("Interactive Assistant", self)
+        label = QLabel("AI Assistant", self)
         label.setAlignment(Qt.AlignCenter)
         label.setStyleSheet("font-size: 30px; font-weight: bold; color: white;")
         layout.addWidget(label)
@@ -980,7 +988,7 @@ class LoginSignupApp(QWidget):
         layout.addWidget(self.assistant_status_label)
 
         # Add the tab to the QTabWidget
-        self.tabs.addTab(assistant_tab, "Interactive Assistant")
+        self.tabs.addTab(assistant_tab, "AI Assistant")
 
     def send_chat_message(self):
         """Handle user input and communicate with Gemini AI."""
@@ -992,7 +1000,6 @@ class LoginSignupApp(QWidget):
             self.chat_output.append("<b>Assistant</b> is typing...")
             self.chat_output.repaint()
 
-            # Process the chatbot message asynchronously
             def process_message():
                 try:
                     response = self.fitness_ai_assistant.send_query(message)
