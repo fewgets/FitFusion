@@ -2,9 +2,9 @@ import datetime
 import sys
 import sqlite3
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QStackedWidget, \
-    QTabWidget, QSizePolicy, QHBoxLayout, QMessageBox, QTextEdit, QSlider, QComboBox
-from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtGui import QPixmap, QBrush, QPalette
+    QTabWidget, QSizePolicy, QHBoxLayout, QMessageBox, QTextEdit, QSlider, QComboBox, QDialog
+from PyQt5.QtCore import Qt, QTimer, QSize
+from PyQt5.QtGui import QPixmap, QBrush, QPalette, QIcon
 import speech_recognition as sr  # Added for voice recognition
 import threading
 # Backend
@@ -1199,35 +1199,206 @@ class LoginSignupApp(QWidget):
 
 
 
-
-
-
-
     def create_help_tab(self):
         help_tab = QWidget()
         layout = QVBoxLayout(help_tab)
 
+        # Title
         label = QLabel("Help & FAQs", self)
         label.setAlignment(Qt.AlignCenter)
-        label.setStyleSheet("font-size: 30px; font-weight: bold; color: white;")
+        label.setStyleSheet("""
+            font-size: 30px;
+            font-weight: bold;
+            color: white;
+            background-color: #8e24aa;  /* Purplish background for the label */
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 20px;  /* Added margin for spacing */
+        """)
         layout.addWidget(label)
 
+        # FAQ Section Header
+        faq_header = QLabel("Frequently Asked Questions", self)
+        faq_header.setAlignment(Qt.AlignCenter)
+        faq_header.setStyleSheet("""
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 20px;
+        """)
+        layout.addWidget(faq_header)
+
+        # FAQs with collapsible sections
         faqs = [
-            "Q: How do I reset my password?\nA: Click on 'Forgot Password?' on the login screen.",
-            "Q: How can I contact support?\nA: Please use the contact form on our website.",
-            "Q: What features does this app offer?\nA: The app provides workout planning, meal planning, and fitness tracking."
+            ("How do I reset my password?", "Click on 'Forgot Password?' on the login screen."),
+            ("How can I contact support?", "Please use the contact form on our website."),
+            ("What features does this app offer?",
+             "The app provides posture tracking,meal planning,fitness tracking and workout planning ."),
+            ("Is my data secure?", "Yes, we use encryption to protect your data."),
+            ("Can I sync my progress with other devices?", "Yes, you can sync your data across multiple devices.")
         ]
 
-        for faq in faqs:
-            faq_label = QLabel(faq, self)
-            faq_label.setStyleSheet("font-size: 20px; color: #cccccc;")
-            layout.addWidget(faq_label)
+        for question, answer in faqs:
+            question_label = QPushButton(question, self)
+            self.set_button_style(question_label)
+
+            answer_label = QLabel(answer, self)
+            answer_label.setWordWrap(True)
+            answer_label.setStyleSheet("""
+                font-size: 16px; 
+                color: #cccccc; 
+                padding: 10px; a
+                background-color: #f0f0f0; 
+                border: 1px solid #cccccc; 
+                border-radius: 5px;
+                margin-left: 20px;  /* Indent the answer */
+            """)
+            answer_label.setVisible(False)
+
+            # Toggle answer visibility on question click
+            def toggle_answer(checked, answer_label=answer_label):
+                answer_label.setVisible(not answer_label.isVisible())
+                if answer_label.isVisible():
+                    answer_label.setStyleSheet("""
+                        font-size: 16px; 
+                        color: black; 
+                        padding: 10px; 
+                        background-color: #e0e0e0;  /* Slightly darker when visible */
+                        border: 1px solid #aaaaaa; 
+                        border-radius: 5px;
+                        margin-left: 20px; 
+                    """)
+                else:
+                    answer_label.setStyleSheet("""
+                        font-size: 16px; 
+                        color: #cccccc; 
+                        padding: 10px; 
+                        background-color: #f0f0f0; 
+                        border: 1px solid #cccccc; 
+                        border-radius: 5px;
+                        margin-left: 20px; 
+                    """)
+
+            question_label.clicked.connect(toggle_answer)
+            layout.addWidget(question_label)
+            layout.addWidget(answer_label)
+
+        # Add a feedback section at the bottom
+        feedback_label = QLabel("Still have questions? Reach out to our support team!", self)
+        feedback_label.setAlignment(Qt.AlignCenter)
+        feedback_label.setStyleSheet("""
+            font-size: 18px;
+            color: #ffffff;
+            margin-top: 30px;
+        """)
+        layout.addWidget(feedback_label)
+
+        contact_button = QPushButton("Contact Support", self)
+        self.set_button_style(contact_button)
+        contact_button.clicked.connect(
+            self.open_contact_form)  # Connect to a method that opens a contact form or support page
+        layout.addWidget(contact_button)
 
         self.tabs.addTab(help_tab, "Help")
 
 
+    def open_contact_form(self):
+        """Open the contact form for user inquiries."""
+        # This method should create and display a contact form dialog
+        contact_dialog = QDialog(self)
+        contact_dialog.setWindowTitle("Contact Support")
+        contact_dialog.setFixedSize(400, 400)
 
+        layout = QVBoxLayout(contact_dialog)
 
+        label = QLabel("Contact Support", contact_dialog)
+        label.setAlignment(Qt.AlignCenter)
+        label.setStyleSheet("""
+            font-size: 20px;
+            font-weight: bold;
+            color: #8e24aa;  /* Matching the app theme */
+            margin-bottom: 10px;
+        """)
+        layout.addWidget(label)
+
+        name_input = QLineEdit(contact_dialog)
+        name_input.setPlaceholderText("Name")
+        name_input.setStyleSheet("""
+            font-size: 16px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        """)
+        layout.addWidget(name_input)
+
+        email_input = QLineEdit(contact_dialog)
+        email_input.setPlaceholderText("Email")
+        email_input.setStyleSheet("""
+            font-size: 16px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        """)
+        layout.addWidget(email_input)
+
+        message_input = QTextEdit(contact_dialog)
+        message_input.setPlaceholderText("Message")
+        message_input.setStyleSheet("""
+            font-size: 16px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        """)
+        layout.addWidget(message_input)
+
+        submit_button = QPushButton("Submit", contact_dialog)
+        self.set_button_style(submit_button)
+        layout.addWidget(submit_button)
+
+        success_label = QLabel("", contact_dialog)
+        success_label.setAlignment(Qt.AlignCenter)
+        success_label.setStyleSheet("""
+            font-size: 16px;
+            color: #42a5f5;  /* Light blue color for success message */
+            margin-top: 10px;
+            font-weight: bold;
+        """)
+        layout.addWidget(success_label)
+
+        def submit_contact_form():
+            """Handle the submission of the contact form."""
+            name = name_input.text()
+            email = email_input.text()
+            message = message_input.toPlainText()
+
+            if not name or not email or not message:
+                success_label.setText("Please fill in all fields.")
+                success_label.setStyleSheet("""
+                    font-size: 16px;
+                    color: red;  /* Red color for error message */
+                    margin-top: 10px;
+                    font-weight: bold;
+                """)
+                return
+
+            # Show a confirmation message within the dialog
+            success_label.setText("Message sent! We'll get back to you shortly.")
+            success_label.setStyleSheet("""
+                font-size: 16px;
+                color: #42a5f5;  /* Light blue color for success message */
+                margin-top: 10px;
+                font-weight: bold;
+            """)
+            name_input.clear()
+            email_input.clear()
+            message_input.clear()
+
+        submit_button.clicked.connect(submit_contact_form)
+
+        contact_dialog.exec_()
 
     def show_message(self, message):
         """Display a message in a dialog."""
