@@ -2,7 +2,7 @@ import datetime
 import sys
 import sqlite3
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QStackedWidget, \
-    QTabWidget, QSizePolicy, QHBoxLayout, QMessageBox, QTextEdit, QSlider, QComboBox, QDialog
+    QTabWidget, QSizePolicy, QHBoxLayout, QMessageBox, QTextEdit, QSlider, QComboBox, QDialog, QProgressBar
 from PyQt5.QtCore import Qt, QTimer, QSize
 from PyQt5.QtGui import QPixmap, QBrush, QPalette, QIcon
 import speech_recognition as sr  # Added for voice recognition
@@ -189,7 +189,7 @@ class LoginSignupApp(QWidget):
         # Add back and forward buttons
         self.back_button = QPushButton("Back")
         self.forward_button = QPushButton("Forward")
-
+        self.get_current_user_id()
         # Set button styles
         self.set_back_button_style(self.back_button)
         self.set_forward_button_style(self.forward_button)
@@ -208,7 +208,8 @@ class LoginSignupApp(QWidget):
         # Initialize history stack
         self.history = []
         self.current_index = -1
-
+        # Call the initialize_database function at the start of your application
+        self.initialize_database()
         self.init_main_ui()
         self.init_login_ui()
         self.init_signup_ui()
@@ -400,8 +401,8 @@ class LoginSignupApp(QWidget):
         try:
             conn = sqlite3.connect("1.db")
             cur = conn.cursor()
-            cur.execute("SELECT * FROM test WHERE email=? AND password=?", (email, password))
-            row = cur.fetchall()
+            cur.execute("SELECT id, name FROM test WHERE email=? AND password=?", (email, password))
+            row = cur.fetchone()  # Fetch a single record
         except sqlite3.Error as e:
             self.login_feedback.setStyleSheet("font-size: 25px; color: red;")
             self.login_feedback.setText(f"Database error: {e}")
@@ -410,14 +411,15 @@ class LoginSignupApp(QWidget):
             conn.close()  # Ensure the connection is closed
 
         if row:
-            user_name = row[0][1]
+            user_id, user_name = row  # Retrieve ID and name
+            self.current_user_id = user_id  # Store the user ID in an instance attribute
             self.login_feedback.setStyleSheet("font-size: 25px; color: white;")
             self.login_feedback.setText(f"Login successful. Welcome {user_name}!")
             self.show_welcome_frame(user_name)  # Show welcome frame upon successful login
         else:
-            # Provide a more user-friendly message
             self.login_feedback.setStyleSheet("font-size: 25px; color: white;")
             self.login_feedback.setText("No such user found. Please sign up or check your credentials.")
+
     def open_forgot_password_window(self, event):
         """Open the forgot password dialog"""
         self.central_widget.setCurrentIndex(3)  # Switch to forgot password UI
@@ -472,7 +474,7 @@ class LoginSignupApp(QWidget):
         layout = QVBoxLayout(signup_widget)
 
         # Signup Form UI with Custom Styling
-        name_label = QLabel("User  Name: ", self)
+        name_label = QLabel("User Name: ", self)
         name_label.setStyleSheet("font-size: 30px; color: white;")
         layout.addWidget(name_label)
 
@@ -480,7 +482,7 @@ class LoginSignupApp(QWidget):
         self.set_text_field_style(self.signup_name)
         layout.addWidget(self.signup_name)
 
-        email_label = QLabel("User  Email: ", self)
+        email_label = QLabel("User Email: ", self)
         email_label.setStyleSheet("font-size: 30px; color: white;")
         layout.addWidget(email_label)
 
@@ -511,30 +513,130 @@ class LoginSignupApp(QWidget):
 
         self.central_widget.addWidget(signup_widget)
 
+    def initialize_database(self):
+        """Ensure the database schema is up to date"""
+        conn = sqlite3.connect("1.db")
+        cur = conn.cursor()
+
+        # Check the schema of the 'streaks' table
+        cur.execute("PRAGMA table_info(streaks)")
+        schema_info = cur.fetchall()
+        print("Current schema of streaks table:")
+        for column in schema_info:
+            print(column)
+
+        def column_exists(table, column):
+            cur.execute(f"PRAGMA table_info({table})")
+            return any(row[1] == column for row in cur.fetchall())
+
+        # Ensure the 'streak_count' column exists
+        if not column_exists('streaks', 'streak_count'):
+            print("Adding column: streak_count")
+            cur.execute("ALTER TABLE streaks ADD COLUMN streak_count INTEGER DEFAULT 0")
+
+        # Ensure the 'current_streak' column exists
+        if not column_exists('streaks', 'current_streak'):
+            print("Adding column: current_streak")
+            cur.execute("ALTER TABLE streaks ADD COLUMN current_streak INTEGER DEFAULT 0")
+
+        # Ensure the 'longest_streak' column exists
+        if not column_exists('streaks', 'longest_streak'):
+            print("Adding column: longest_streak")
+            cur.execute("ALTER TABLE streaks ADD COLUMN longest_streak INTEGER DEFAULT 0")
+
+        conn.commit()
+        conn.close()
+
+    import sqlite3
+    import datetime
+    from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton
+
+    # Your existing init_signup_ui and initialize_database functions here...
+
     def signup_database(self):
         """Handle database actions for signup"""
         name = self.signup_name.text().strip()
         email = self.signup_email.text().strip()
         password = self.signup_password.text().strip()
 
+        # Validate that all fields are filled
         if not name or not email or not password:
             self.signup_feedback.setText("Please fill in all fields.")
             return
 
-        conn = sqlite3.connect("1.db")
-        cur = conn.cursor()
-        cur.execute("CREATE TABLE IF NOT EXISTS test(id INTEGER PRIMARY KEY, name TEXT, email TEXT, password TEXT)")
-        cur.execute("INSERT INTO test (name, email, password) VALUES (?, ?, ?)", (name, email, password))
+        try:
+            conn = sqlite3.connect("1.db")
+            cur = conn.cursor()
 
-        conn.commit()
-        conn.close()
+            # Ensure the 'test' table exists for users (if not, it gets created)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS test (
+                    id INTEGER PRIMARY KEY, 
+                    name TEXT, 
+                    email TEXT, 
+                    password TEXT
+                )
+            """)
 
-        self.signup_feedback.setText("Account created successfully!")
-        self.signup_name.clear()
-        self.signup_email.clear()
-        self.signup_password.clear()
-        self.central_widget.setCurrentIndex(0)  # Go back to main UI
-        self.add_to_history(0)  # Add main UI to history
+            # Check if the user already exists by email
+            cur.execute("SELECT id FROM test WHERE email = ?", (email,))
+            existing_user = cur.fetchone()
+            if existing_user:
+                self.signup_feedback.setText("Account already exists with this email.")
+                return  # If user exists, stop further processing
+
+            # Add the new user to the 'test' table
+            cur.execute("INSERT INTO test (name, email, password) VALUES (?, ?, ?)", (name, email, password))
+
+            # Get the user ID of the newly inserted user
+            user_id = cur.lastrowid
+
+            # Check if the 'streaks' table exists, and create it if it doesn't
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS streaks (
+                    user_id INTEGER PRIMARY KEY,
+                    last_active_date TEXT,
+                    streak_count INTEGER,
+                    current_streak INTEGER,
+                    longest_streak INTEGER,
+                    FOREIGN KEY(user_id) REFERENCES test(id)
+                )
+            """)
+
+            # Function to check if a column exists in the streaks table
+            def column_exists(table, column):
+                cur.execute(f"PRAGMA table_info({table})")
+                return any(row[1] == column for row in cur.fetchall())
+
+            # Ensure the required columns exist in the 'streaks' table (add if missing)
+            if not column_exists('streaks', 'last_active_date'):
+                cur.execute("ALTER TABLE streaks ADD COLUMN last_active_date TEXT")
+            if not column_exists('streaks', 'current_streak'):
+                cur.execute("ALTER TABLE streaks ADD COLUMN current_streak INTEGER DEFAULT 0")
+            if not column_exists('streaks', 'longest_streak'):
+                cur.execute("ALTER TABLE streaks ADD COLUMN longest_streak INTEGER DEFAULT 0")
+
+            # Initialize the streak for the new user
+            cur.execute("""
+                INSERT INTO streaks (user_id, last_active_date, streak_count, current_streak, longest_streak)
+                VALUES (?, ?, ?, ?, ?)
+            """, (user_id, datetime.datetime.today().date().isoformat(), 0, 0, 0))
+
+            conn.commit()
+
+            # Provide feedback that the account was created successfully
+            self.signup_feedback.setText("Account created successfully!")
+            self.signup_name.clear()
+            self.signup_email.clear()
+            self.signup_password.clear()
+            self.central_widget.setCurrentIndex(0)  # Go back to the main UI
+            self.add_to_history(0)  # Add main UI to history
+
+        except sqlite3.Error as e:
+            # In case of an error with the database, show the error message
+            self.signup_feedback.setText(f"Database error: {e}")
+        finally:
+            conn.close()
 
     def init_welcome_ui(self):
         """Show a welcome frame after successful login"""
@@ -787,29 +889,203 @@ class LoginSignupApp(QWidget):
         # Format and display the workout plan
         formatted_plan = planner.format_exercise_details(exercises, total_time)
         self.workout_plan_output.setHtml(formatted_plan)
+
     def create_streak_tab(self):
+        """Create the Streak Tab UI with enhanced visual design and functionality."""
         streak_tab = QWidget()
         layout = QVBoxLayout(streak_tab)
+        layout.setContentsMargins(20, 20, 20, 20)
 
-        label = QLabel("Streak Tracker", self)
-        label.setAlignment(Qt.AlignCenter)
-        label.setStyleSheet("font-size: 30px; font-weight: bold; color: white;")
-        layout.addWidget(label)
+        # Title label for Streak Tracker
+        title_label = QLabel("Streak Tracker")
+        title_label.setAlignment(Qt.AlignCenter)
+        title_label.setStyleSheet("""
+            font-size: 30px;
+            font-weight: bold;
+            color: #D81B60;  /* Soft pink for the label text */
+            background-color: #F3E5F5;  /* Very light lavender for the background */
+            padding: 10px;
+        """)
+        layout.addWidget(title_label)
 
+        # Sub-heading label for current streak status
+        current_status_label = QLabel("Track your streaks and progress!")
+        current_status_label.setAlignment(Qt.AlignCenter)
+        current_status_label.setStyleSheet("""
+            font-size: 20px;
+            color: white;
+            margin-bottom: 20px;
+        """)
+        layout.addWidget(current_status_label)
 
-        button_reset = QPushButton("Reset Streak", self)
-        button_view = QPushButton("View Progress", self)
+        # Display streak statistics
+        stats_layout = QHBoxLayout()
 
-        self.set_button_style(button_reset)
-        self.set_button_style(button_view)
+        # Current Streak
+        self.current_streak_label = QLabel("Current Streak: 0 Days")
+        self.current_streak_label.setAlignment(Qt.AlignCenter)
+        self.current_streak_label.setStyleSheet("""
+            font-size: 18px;
+            color: white;
+            background-color: #4CAF50; /* Green */
+            padding: 10px;
+            border-radius: 5px;
+        """)
+        stats_layout.addWidget(self.current_streak_label)
 
-        button_layout = QHBoxLayout()
-        button_layout.addWidget(button_reset)
-        button_layout.addWidget(button_view)
+        # Longest Streak
+        self.longest_streak_label = QLabel("Longest Streak: 0 Days")
+        self.longest_streak_label.setAlignment(Qt.AlignCenter)
+        self.longest_streak_label.setStyleSheet("""
+            font-size: 18px;
+            color: white;
+            background-color: #FF5733; /* Red */
+            padding: 10px;
+            border-radius: 5px;
+        """)
+        stats_layout.addWidget(self.longest_streak_label)
 
-        layout.addLayout(button_layout)
+        layout.addLayout(stats_layout)
+
+        # Streak Progress Bar
+        self.streak_progress_bar = QProgressBar()
+        self.streak_progress_bar.setStyleSheet("""
+            QProgressBar {
+                border: 2px solid #FFFFFF;
+                border-radius: 5px;
+                background: #333333;
+                text-align: center;
+                font-size: 16px;
+                color: white;
+            }
+            QProgressBar::chunk {
+                background-color: #FFD700; /* Golden color */
+                width: 20px;
+            }
+        """)
+        self.streak_progress_bar.setMaximum(7)  # Assuming streaks reset after 7 days
+        self.streak_progress_bar.setValue(0)
+        layout.addWidget(self.streak_progress_bar)
+
+        # Display streak progress in detail
+        self.streak_progress_label = QLabel("Your current streak progress: 0/7 days")
+        self.streak_progress_label.setAlignment(Qt.AlignCenter)
+        self.streak_progress_label.setStyleSheet("""
+            font-size: 16px;
+            color: white;
+            margin-top: 10px;
+        """)
+        layout.addWidget(self.streak_progress_label)
+
+        # Add the streak tab to the main tab widget
         self.tabs.addTab(streak_tab, "Streak")
 
+        # Ensure the tab switch signal is connected only once
+        if not hasattr(self, '_streak_signal_connected'):
+            self.tabs.currentChanged.connect(self.update_streak_progress)
+            self._streak_signal_connected = True  # Prevent re-connecting the signal
+
+    def update_streak_progress(self):
+        """Update the streak progress display in the Streak tab."""
+        if self.tabs.tabText(self.tabs.currentIndex()) != "Streak":
+            return  # Not the streak tab, ignore
+
+        user_id = self.get_current_user_id()
+        if not user_id:
+            self.streak_progress_label.setText("No user logged in.")
+            return
+
+        try:
+            conn = sqlite3.connect("1.db")
+            cur = conn.cursor()
+
+            # Ensure streaks table exists
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS streaks (
+                    user_id TEXT PRIMARY KEY,
+                    last_active_date TEXT,
+                    streak_count INTEGER,
+                    current_streak INTEGER,
+                    longest_streak INTEGER
+                )
+            """)
+
+            # Fetch streak data for the current user
+            today = datetime.datetime.today().date().isoformat()
+            cur.execute(
+                "SELECT last_active_date, streak_count, current_streak, longest_streak FROM streaks WHERE user_id = ?",
+                (user_id,))
+            result = cur.fetchone()
+
+            if result:
+                _, streak_count, current_streak, longest_streak = result
+                self.streak_progress_label.setText(
+                    f"Total Streak: {streak_count} days\n"
+                    f"Current Streak: {current_streak} days\n"
+                    f"Longest Streak: {longest_streak} days"
+                )
+            else:
+                # Handle first-time login for a user
+                cur.execute("""
+                    INSERT INTO streaks (user_id, last_active_date, streak_count, current_streak, longest_streak)
+                    VALUES (?, ?, 1, 1, 1)
+                """, (user_id, today))
+                conn.commit()
+                self.streak_progress_label.setText(
+                    "Total Streak: 1 day\nCurrent Streak: 1 day\nLongest Streak: 1 day"
+                )
+        except sqlite3.Error as e:
+            self.streak_progress_label.setText(f"Error fetching streak data: {e}")
+        finally:
+            conn.close()
+
+    def update_streak(self, user_id):
+        """Update the streak for the user."""
+        conn = sqlite3.connect("1.db")
+        cur = conn.cursor()
+
+        today = datetime.datetime.today().date().isoformat()
+        try:
+            cur.execute(
+                "SELECT last_active_date, streak_count, current_streak, longest_streak FROM streaks WHERE user_id = ?",
+                (user_id,))
+            result = cur.fetchone()
+
+            if result:
+                last_active_date, streak_count, current_streak, longest_streak = result
+                if last_active_date == today:
+                    return  # No update needed
+                elif last_active_date == (datetime.datetime.today() - datetime.timedelta(days=1)).date().isoformat():
+                    streak_count += 1
+                    current_streak += 1
+                else:
+                    streak_count = 1
+                    current_streak = 1
+
+                if current_streak > longest_streak:
+                    longest_streak = current_streak
+
+                cur.execute("""
+                    UPDATE streaks
+                    SET last_active_date = ?, streak_count = ?, current_streak = ?, longest_streak = ?
+                    WHERE user_id = ?
+                """, (today, streak_count, current_streak, longest_streak, user_id))
+            else:
+                cur.execute("""
+                    INSERT INTO streaks (user_id, last_active_date, streak_count, current_streak, longest_streak)
+                    VALUES (?, ?, 1, 1, 1)
+                """, (user_id, today))
+
+            conn.commit()
+        except sqlite3.Error as e:
+            print(f"Database error while updating streak: {e}")
+        finally:
+            conn.close()
+
+    def get_current_user_id(self):
+        user_id = getattr(self, 'current_user_id', None)
+        print(f"get_current_user_id() returned: {user_id}")
+        return user_id
 
     def create_bmi_visualization_tab(self):
         bmi_tab = QWidget()
@@ -817,22 +1093,49 @@ class LoginSignupApp(QWidget):
 
         label = QLabel("BMI Visualization", self)
         label.setAlignment(Qt.AlignCenter)
-        label.setStyleSheet("font-size: 30px; font-weight: bold; color: white;")
+        label.setStyleSheet("""
+            font-size: 30px;
+            font-weight: bold;
+            color: #D81B60;  /* Soft pink for the label text */
+            background-color: #F3E5F5;  /* Very light lavender for the background */
+            padding: 10px;
+        """)
         layout.addWidget(label)
 
         self.weight_input = QLineEdit(self)
         self.weight_input.setPlaceholderText("Weight (kg)")
-        self.set_text_field_style(self.weight_input)
+        self.weight_input.setStyleSheet("""
+            font-size: 16px;           /* Smaller font size */
+            padding: 5px;              /* Reduced padding */
+            height: 25px;              /* Smaller height */
+            border: 1px solid #ccc;    /* Border */
+            border-radius: 5px;        /* Rounded corners */
+            margin-bottom: 5px;        /* Reduced margin for spacing */
+        """)
         layout.addWidget(self.weight_input)
 
         self.height_input = QLineEdit(self)
         self.height_input.setPlaceholderText("Height (cm)")
-        self.set_text_field_style(self.height_input)
+        self.height_input.setStyleSheet("""
+            font-size: 16px;           /* Smaller font size */
+            padding: 5px;              /* Reduced padding */
+            height: 25px;              /* Smaller height */
+            border: 1px solid #ccc;    /* Border */
+            border-radius: 5px;        /* Rounded corners */
+            margin-bottom: 5px;        /* Reduced margin for spacing */
+        """)
         layout.addWidget(self.height_input)
 
         self.age_input = QLineEdit(self)
         self.age_input.setPlaceholderText("Age")
-        self.set_text_field_style(self.age_input)
+        self.age_input.setStyleSheet("""
+            font-size: 16px;           /* Smaller font size */
+            padding: 5px;              /* Reduced padding */
+            height: 25px;              /* Smaller height */
+            border: 1px solid #ccc;    /* Border */
+            border-radius: 5px;        /* Rounded corners */
+            margin-bottom: 5px;        /* Reduced margin for spacing */
+        """)
         layout.addWidget(self.age_input)
 
         calculate_button = QPushButton("Calculate BMI", self)
@@ -845,18 +1148,21 @@ class LoginSignupApp(QWidget):
         self.bmi_output.setReadOnly(True)  # Make it read-only
         self.bmi_output.setStyleSheet("""
             background-color: #f0f0f0;
-            font-size: 18px;          /* Increased font size */
-            padding: 10px;            /* Increased padding */
-            border: 2px solid #E1BEE7;  /* Light purple border */
+            font-size: 18px;           /* Reduced font size */
+            font-weight: bold;         /* Bold text for emphasis */
+            color: #8e24aa;            /* Matching the app theme */
+            padding: 5px;              /* Reduced padding */
+            border: 2px solid #E1BEE7; /* Light purple border */
             border-radius: 5px;
-            height: 20px;             /* Increased height */
-            /* Added margin for spacing */
+            height: 25px;              /* Reduced height */
+            margin-top: 10px;          /* Added margin for spacing */
+            margin-bottom: 10px;       /* Reduced margin for spacing */
         """)
         layout.addWidget(self.bmi_output)
 
-        # Create a canvas for the plot
-        self.canvas = FigureCanvas(Figure(figsize=(6, 4)))  # Slightly larger canvas
-        self.canvas.setStyleSheet("border: 2px solid #E1BEE7; border-radius: 10px;")
+        # Create a larger canvas for the plot
+        self.canvas = FigureCanvas(Figure(figsize=(8, 8)))  # Larger canvas for better visibility
+        self.canvas.setStyleSheet("border: 2px solid #E1BEE7; border-radius: 10px; background-color: #f3e5f5;")
         layout.addWidget(self.canvas)
 
         self.tabs.addTab(bmi_tab, "BMI")
@@ -889,11 +1195,17 @@ class LoginSignupApp(QWidget):
 
         # Create the plot
         ax = self.canvas.figure.add_subplot(111)
-        bars = ax.bar(categories, values, color=['#42a5f5', '#66bb6a', '#ffa726', '#ef5350'], edgecolor='white',
-                      linewidth=2)
-        ax.axhline(bmi_value, color='#8e24aa', linestyle='--', linewidth=2)
-        ax.text(3.5, bmi_value, f'Your BMI: {bmi_value:.2f}', color='#8e24aa', fontsize=12, ha='right', va='bottom')
+        bars = ax.bar(categories, values, color=['#8e24aa', '#66bb6a', '#ffa726', '#ef5350'], edgecolor='white',
+                      linewidth=2, alpha=0.9, zorder=3)
+
+        # Highlight the user's BMI value
+        user_bmi_bar = ax.axhline(bmi_value, color='#42a5f5', linestyle='--', linewidth=2)
+        ax.text(3.5, bmi_value, f'Your BMI: {bmi_value:.2f}', color='#42a5f5', fontsize=12, ha='right', va='bottom',
+                zorder=4)
+
+        # Set background and grid style
         ax.set_facecolor('#f3e5f5')  # Light purple background for the plot
+        ax.grid(color='white', linestyle='--', linewidth=0.7, zorder=0)
 
         # Add labels and title with modern fonts
         ax.set_title("BMI Categories", fontsize=20, fontweight='bold', color='#d81b60')
@@ -918,7 +1230,13 @@ class LoginSignupApp(QWidget):
 
         label = QLabel("Meal Planner", self)
         label.setAlignment(Qt.AlignCenter)
-        label.setStyleSheet("font-size: 30px; font-weight: bold; color: white;")
+        label.setStyleSheet("""
+            font-size: 30px;
+            font-weight: bold;
+            color: #D81B60;  /* Soft pink for the label text */
+            background-color: #F3E5F5;  /* Very light lavender for the background */
+            padding: 10px;
+        """)
         layout.addWidget(label)
 
         self.calories_input = QLineEdit(self)
@@ -1118,7 +1436,13 @@ class LoginSignupApp(QWidget):
         # Tab title
         label = QLabel("AI Assistant", self)
         label.setAlignment(Qt.AlignCenter)
-        label.setStyleSheet("font-size: 30px; font-weight: bold; color: white;")
+        label.setStyleSheet("""
+            font-size: 30px;
+            font-weight: bold;
+            color: #D81B60;  /* Soft pink for the label text */
+            background-color: #F3E5F5;  /* Very light lavender for the background */
+            padding: 10px;
+        """)
         layout.addWidget(label)
 
         # Chat output area
@@ -1209,11 +1533,9 @@ class LoginSignupApp(QWidget):
         label.setStyleSheet("""
             font-size: 30px;
             font-weight: bold;
-            color: white;
-            background-color: #8e24aa;  /* Purplish background for the label */
+            color: #D81B60;  /* Soft pink for the label text */
+            background-color: #F3E5F5;  /* Very light lavender for the background */
             padding: 10px;
-            border-radius: 10px;
-            margin-bottom: 20px;  /* Added margin for spacing */
         """)
         layout.addWidget(label)
 
