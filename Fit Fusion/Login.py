@@ -1,8 +1,9 @@
 import datetime
+import random
 import sys
 import sqlite3
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QStackedWidget, \
-    QTabWidget, QSizePolicy, QHBoxLayout, QMessageBox, QTextEdit, QSlider, QComboBox, QDialog, QProgressBar
+    QTabWidget, QSizePolicy, QHBoxLayout, QMessageBox, QTextEdit, QSlider, QComboBox, QDialog, QProgressBar, QScrollArea
 from PyQt5.QtCore import Qt, QTimer, QSize
 from PyQt5.QtGui import QPixmap, QBrush, QPalette, QIcon
 import speech_recognition as sr  # Added for voice recognition
@@ -169,6 +170,11 @@ class WorkoutPlanner:
 class LoginSignupApp(QWidget):
     def __init__(self, api_key,gemini_api_key):
         super().__init__()
+        self.PALE_BLUE = "#B0E0E6"
+        self.DARK_BLUE = "#0057B7"
+        self.VERY_LIGHT_BLUE = "#E0FFFF"
+        self.FONT_FAMILY = "'Segoe UI', Arial, sans-serif"
+
         self.fitness_ai_assistant = FitnessAIAssistant(gemini_api_key)
         self.meal_planner = MealPlanner(api_key)  # Create an instance of MealPlanner
 
@@ -178,6 +184,8 @@ class LoginSignupApp(QWidget):
         # Pre-adjust ambient noise once during initialization
         with self.microphone as source:
             self.recognizer.adjust_for_ambient_noise(source)
+
+        self.central_widget = QStackedWidget(self)
 
         self.setWindowTitle('FitFusion: Fitness Tracker')
         self.setGeometry(100, 100, 800, 600)  # Set window size
@@ -219,60 +227,111 @@ class LoginSignupApp(QWidget):
         self.central_widget.setCurrentIndex(0)  # Start with the main UI
         self.add_to_history(0)  # Add main UI to history
 
-
-
-
-    def set_back_button_style(self, button):
-        button.setStyleSheet("""
-            background-color: #64B5F6;  /* Light blue for back button */
-            color: white;                /* White text */
-            font-size: 18px;             /* Increased font size */
-            padding: 15px;               /* Increased padding */
-            border-radius: 5px;          /* Rounded corners */
-            cursor: pointer;              /* Change cursor to pointer */
-        }
-        QPushButton:hover {
-            background-color: #5a9bd4;  /* Darker blue on hover */
-        }
-        """)
-
-    def set_forward_button_style(self, button):
-        button.setStyleSheet("""
-            background-color: #FFB74D;  /* Light orange for forward button */
-            color: white;                /* White text */
-            font-size: 18px;             /* Increased font size */
-            padding: 15px;               /* Increased padding */
-            border-radius: 5px;          /* Rounded corners */
-            cursor: pointer;              /* Change cursor to pointer */
-        }
-        QPushButton:hover {
-            background-color: #ff9f3d;  /* Darker orange on hover */
-        }
-        """)
     def set_button_style(self, button):
-        button.setStyleSheet("""
-            background-color: #E1BEE7;  /* Light purple background */
-            color: black;                /* Black text for contrast */
-            font-size: 18px;             /* Increased font size */
-            padding: 10px 20px;          /* Padding for better visibility */
-            border: 1px solid #ccc;      /* Border around buttons */
-            border-radius: 4px;          /* Rounded corners */
-            cursor: pointer;              /* Change cursor to pointer */
-        }
-        QPushButton:hover {
-            background-color: #D5006D;  /* Darker purple on hover */
-        }
+        button.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {self.PALE_BLUE}; 
+                color: {self.DARK_BLUE}; 
+                font-size: 18px;
+                padding: 10px 20px;
+                border: 1px solid {self.DARK_BLUE}; 
+                border-radius: 4px;
+                cursor: pointer;
+                transition: all 0.3s ease;
+            }}
+            QPushButton:hover {{
+                background-color: {self.VERY_LIGHT_BLUE}; 
+                transform: scale(1.05);
+            }}
         """)
 
     def set_text_field_style(self, text_field):
-        text_field.setStyleSheet("""
-            font-size: 24px;  /* Increased font size */
-            padding: 12px;    /* Increased padding */
-            border: 2px solid #444444;
+        text_field.setStyleSheet(f"""
+            font-size: 24px;
+            padding: 12px;
+            border: 2px solid {self.DARK_BLUE}; 
             border-radius: 5px;
-            background-color: #f1f1f1;
+            background-color: {self.VERY_LIGHT_BLUE}; 
         """)
 
+    def set_navigation_button_style(self, button):
+        button.setStyleSheet(f"""
+            QPushButton {{
+                font-size: 18px;
+                color: {self.DARK_BLUE}; 
+                background: transparent;
+                border: none;
+            }}
+            QPushButton:hover {{
+                color: {self.PALE_BLUE}; 
+                text-decoration: underline;
+            }}
+        """)
+
+    def set_cta_button_style(self, button):
+        button.setStyleSheet(f"""
+            QPushButton {{
+                font-size: 20px;
+                font-weight: bold;
+                color: white;
+                background: linear-gradient(90deg, {self.DARK_BLUE}, {self.PALE_BLUE}); 
+                padding: 15px 30px;
+                border: none;
+                border-radius: 25px;
+            }}
+            QPushButton:hover {{
+                background: linear-gradient(90deg, {self.DARK_BLUE}, {self.VERY_LIGHT_BLUE}); 
+            }}
+        """)
+
+    def set_background_image(self, image_path):
+        self.central_widget.setStyleSheet(f"""
+            QStackedWidget {{
+                border-image: url({image_path}) 0 0 0 0 stretch stretch;
+                animation: background-animation 30s linear infinite;
+            }}
+            @keyframes background-animation {{
+                0% {{ background-position: 0% 50%; }}
+                50% {{ background-position: 100% 50%; }}
+                100% {{ background-position: 0% 50%; }}
+            }}
+        """)
+
+    def set_back_button_style(self, button):
+            button.setStyleSheet("""
+                QPushButton {
+                    background-color: #B0E0E6;  /* Pale Blue */
+                    color: #0057B7;             /* Dark Blue */
+                    font-size: 18px;
+                    padding: 10px 20px;
+                    border: 1px solid #0057B7;  /* Dark Blue Border */
+                    border-radius: 4px;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                }
+                QPushButton:hover {
+                    background-color: #E0FFFF;  /* Very Light Blue */
+                    transform: scale(1.05);
+                }
+            """)
+
+    def set_forward_button_style(self, button):
+            button.setStyleSheet("""
+                QPushButton {
+                    background-color: #B0E0E6;  /* Pale Blue */
+                    color: #0057B7;             /* Dark Blue */
+                    font-size: 18px;
+                    padding: 10px 20px;
+                    border: 1px solid #0057B7;  /* Dark Blue Border */
+                    border-radius: 4px;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                }
+                QPushButton:hover {
+                    background-color: #E0FFFF;  /* Very Light Blue */
+                    transform: scale(1.05);
+                }
+            """)
 
     def add_to_history(self, index):
         """Add the current index to the history."""
@@ -294,127 +353,237 @@ class LoginSignupApp(QWidget):
             self.current_index += 1
             self.central_widget.setCurrentIndex(self.history[self.current_index])
 
-    def set_navigation_button_style(self, button):
-        button.setStyleSheet("""
-            QPushButton {
-                font-size: 18px;
-                color: white;
-                background: transparent;
-                border: none;
-            }
-            QPushButton:hover {
-                color: #FFB74D;
-                text-decoration: underline;
-            }
-        """)
-
-    def set_cta_button_style(self, button):
-        button.setStyleSheet("""
-            QPushButton {
-                font-size: 20px;
-                font-weight: bold;
-                color: white;
-                background: linear-gradient(90deg, #FF5722, #FF9800);
-                padding: 15px 30px;
-                border: none;
-                border-radius: 25px;
-            }
-            QPushButton:hover {
-                background: linear-gradient(90deg, #FF3D00, #F57C00);
-            }
-        """)
-
     def init_main_ui(self):
-        """Enhanced Welcome Page with improved layout and functionality."""
+
         main_widget = QWidget()
         main_layout = QVBoxLayout(main_widget)
 
-        # HEADER SECTION
-        header_layout = QHBoxLayout()
-        header_layout.setSpacing(20)
-
-        # App Logo
-        logo_label = QLabel("FitFusion", self)
-        logo_label.setStyleSheet("font-size: 35px; font-weight: bold; color: #FFB74D;")
-        header_layout.addWidget(logo_label)
-
-        # Navigation Links
-        nav_links = ["About Us", "Features", "Contact"]
-        for link in nav_links:
-            nav_button = QPushButton(link, self)
-            nav_button.clicked.connect(self.dummy_placeholder)  # Placeholder functionality
-            self.set_navigation_button_style(nav_button)
-            header_layout.addWidget(nav_button)
-
-        header_layout.addStretch(1)
-        main_layout.addLayout(header_layout)
-
-        # HERO SECTION
-        hero_layout = QVBoxLayout()
-        hero_layout.setSpacing(20)
-
-        # Background Image
+        # Set background image
         self.set_background_image("background_image_dark.png")
 
-        # Tagline
-        tagline_label = QLabel("Your Personal Fitness Journey Starts Here!", self)
-        tagline_label.setStyleSheet("font-size: 40px; font-weight: bold; color: white;")
-        tagline_label.setAlignment(Qt.AlignCenter)
-        hero_layout.addWidget(tagline_label)
+        # HEADER SECTION
+        self.create_header(main_layout)
 
-        # Description
-        description_label = QLabel("Track your health, plan your meals, and stay fit with FitFusion.", self)
-        description_label.setStyleSheet("font-size: 18px; color: #dddddd;")
-        description_label.setAlignment(Qt.AlignCenter)
-        hero_layout.addWidget(description_label)
+        # About Us, Features, Contact Sections
+        self.create_info_sections(main_layout)
 
-        main_layout.addLayout(hero_layout)
+        # CENTERED LOGIN/REGISTER BOX
+        self.create_login_register_box(main_layout)
 
-        # CALL-TO-ACTION SECTION
-        cta_layout = QHBoxLayout()
-        cta_layout.setSpacing(20)
-
-        # Login Button
-        btn_login = QPushButton('Login', self)
-        self.set_cta_button_style(btn_login)
-        btn_login.clicked.connect(lambda: self.switch_to_login())
-        cta_layout.addWidget(btn_login)
-
-        # Signup Button
-        btn_signup = QPushButton('Signup', self)
-        self.set_cta_button_style(btn_signup)
-        btn_signup.clicked.connect(lambda: self.switch_to_signup())
-        cta_layout.addWidget(btn_signup)
-
-        # Repositioned Navigation Buttons
-        back_forward_layout = QHBoxLayout()
-        btn_back = QPushButton("Back", self)
-        btn_back.clicked.connect(self.navigate_back)  # Placeholder function
-        self.set_navigation_button_style(btn_back)
-        back_forward_layout.addWidget(btn_back)
-
-        btn_forward = QPushButton("Forward", self)
-        btn_forward.clicked.connect(self.navigate_forward)  # Placeholder function
-        self.set_navigation_button_style(btn_forward)
-        back_forward_layout.addWidget(btn_forward)
-
-        main_layout.addLayout(cta_layout)
-        main_layout.addStretch(1)
-        main_layout.addLayout(back_forward_layout)
+        # Motivational Quote Section
+        self.create_quote_section(main_layout)
 
         self.central_widget.addWidget(main_widget)
 
-    def dummy_placeholder(self):
-        """Placeholder for navigation links."""
-        QMessageBox.information(self, "Coming Soon", "This feature is under development!")
+    def create_header(self, layout):
+        header_layout = QHBoxLayout()
+        header_layout.setSpacing(15)
 
-    def navigate_back(self):
-        """Placeholder for the Back button."""
-        QMessageBox.information(self, "Back", "Navigating back!")
+        # Logo Section
+        logo_label = QLabel("🏋️ FitFusion", self)
+        logo_label.setStyleSheet("""
+            font-size: 35px;
+            font-weight: bold;
+            color: #B0E0E6;  /* Pale Blue */
+            font-family: 'Segoe UI', Arial, sans-serif;
+        """)
+        logo_label.setAlignment(Qt.AlignLeft)
+        header_layout.addWidget(logo_label)
 
-    def navigate_forward(self):
-        """Placeholder for the Forward button."""
-        QMessageBox.information(self, "Forward", "Navigating forward!")
+        additional_logo_label = QLabel(self)
+        additional_logo_label.setPixmap(QPixmap("path/to/additional_logo.png"))  # Replace with actual image path
+        additional_logo_label.setScaledContents(True)
+        additional_logo_label.setMaximumSize(100, 100)
+        header_layout.addWidget(additional_logo_label)
+
+        # Navigation Section
+        nav_layout = QHBoxLayout()
+        nav_links = {
+            "About Us": self.toggle_about_us,
+            "Features": self.toggle_features,
+            "Contact": self.toggle_contact
+        }
+
+        for link, function in nav_links.items():
+            nav_button = QPushButton(link, self)
+            nav_button.setStyleSheet("""
+                QPushButton {
+                    background-color: #B0E0E6;  /* Pale Blue */
+                    border: 1px solid #0057B7;  /* Dark Blue Border */
+                    color: #0057B7;  /* Dark Blue */
+                    font-family: 'Segoe UI', Arial, sans-serif;
+                    font-size: 15px;
+                    padding: 10px;
+                    border-radius: 5px;
+                    margin-left: 10px;
+                }
+                QPushButton:hover {
+                    background-color: #E0FFFF;  /* Very Light Blue */
+                }
+            """)
+            nav_button.setToolTip(f"Learn more about {link}")
+            nav_button.clicked.connect(function)
+            nav_layout.addWidget(nav_button)
+
+        nav_widget = QWidget()
+        nav_widget.setLayout(nav_layout)
+        nav_widget.setStyleSheet("""
+            QWidget {
+                background-color: #E0FFFF;  /* Very Light Blue */
+                border-radius: 15px;
+                padding: 10px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            }
+        """)
+
+        header_layout.addWidget(nav_widget)
+        header_layout.addStretch(1)
+
+        layout.addLayout(header_layout)
+
+    def create_info_sections(self, layout):
+        self.about_us_section = self.create_info_section("About FitFusion",
+                                                         "FitFusion is your personal fitness companion, helping you achieve your goals. "
+                                                         "Our mission is to make fitness accessible, enjoyable, and efficient for everyone. "
+                                                         "Whether you're a beginner or a pro, FitFusion has something for you.")
+        layout.addWidget(self.about_us_section)
+
+        self.features_section = self.create_info_section("Features",
+                                                         "<ul>"
+                                                         "<li><strong>Meal Planning:</strong> Personalized meal plans to meet your nutritional needs.</li>"
+                                                         "<li><strong>Fitness Tracking:</strong> Track your workouts, progress, and set goals.</li>"
+                                                         "<li><strong>AI-Driven Advice:</strong> Get tailored fitness advice based on your data and preferences.</li>"
+                                                         "<li><strong>Community Support:</strong> Join groups, share your progress, and get motivated.</li>"
+                                                         "</ul>")
+        layout.addWidget(self.features_section)
+
+        self.contact_section = self.create_info_section("Contact Us",
+                                                        "Have questions or need support? Reach out to us!<br>"
+                                                        "Email: <a href='mailto:contact@fitfusion.com' style='color: #0057B7;'>contact@fitfusion.com</a><br>"
+                                                        "Phone: +1-800-123-4567<br>"
+                                                        "Follow us on social media for updates and tips:<br>"
+                                                        "<a href='https://twitter.com/fitfusion' style='color: #0057B7;'>Twitter</a> | "
+                                                        "<a href='https://www.facebook.com/fitfusion' style='color: #0057B7;'>Facebook</a> | "
+                                                        "<a href='https://www.instagram.com/fitfusion' style='color: #0057B7;'>Instagram</a>")
+        layout.addWidget(self.contact_section)
+
+    def create_info_section(self, title, content):
+        section = QWidget()
+        layout = QVBoxLayout(section)
+        section.setStyleSheet("""
+               QWidget {
+                   background-color: #E0FFFF; 
+                   border-radius: 15px;
+                   padding: 20px;
+                   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                   margin-top: 10px;
+               }
+           """)
+        title_label = QLabel(f"<h2 style='color: {self.DARK_BLUE};'>{title}</h2>")
+        content_label = QLabel(f"<div style='color: #333;'>{content}</div>")
+        content_label.setStyleSheet("font-size: 16px; font-family: 'Segoe UI', Arial, sans-serif;")
+        layout.addWidget(title_label)
+        layout.addWidget(content_label)
+        section.hide()
+        return section
+
+    def create_login_register_box(self, layout):
+        box_widget = QWidget()
+        box_layout = QVBoxLayout(box_widget)
+        box_widget.setStyleSheet("""
+               QWidget {
+                   background-color: #E0FFFF; 
+                   border-radius: 15px;
+                   padding: 20px;
+                   max-width: 400px;
+                   margin: 0 auto;
+                   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+               }
+           """)
+
+        tagline_label = QLabel("Your Fitness Journey Starts Today!", self)
+        tagline_label.setStyleSheet(f"""
+               font-size: 20px;
+               font-weight: bold;
+               color: {self.DARK_BLUE}; 
+               font-family: {self.FONT_FAMILY};
+               margin-bottom: 15px;
+           """)
+        tagline_label.setAlignment(Qt.AlignCenter)
+        box_layout.addWidget(tagline_label)
+
+        box_layout.addSpacing(10)
+
+        btn_login = QPushButton("Login", self)
+
+        self.set_button_style(btn_login)
+        btn_login.setToolTip("Click to login to your account")
+        btn_login.clicked.connect(self.switch_to_login)
+        box_layout.addWidget(btn_login)
+
+        btn_signup = QPushButton("Sign Up", self)
+        self.set_button_style(btn_signup)
+        btn_signup.setToolTip("Click to create a new account")
+        btn_signup.clicked.connect(self.switch_to_signup)
+        box_layout.addWidget(btn_signup)
+
+        layout.addStretch(1)
+        layout.addWidget(box_widget, alignment=Qt.AlignCenter)
+        layout.addStretch(1)
+
+
+    def create_quote_section(self, layout):
+        quotes = [
+            "Believe you can and you're halfway there.",
+            "Your limitation—it's only your imagination.",
+            "Push yourself, because no one else is going to do it for you.",
+            "Great things never come from comfort zones.",
+            "Success doesn’t just find you. You have to go out and get it."
+        ]
+        random_quote = random.choice(quotes)
+        quote_box_widget = QWidget()
+        quote_box_layout = QVBoxLayout(quote_box_widget)
+        quote_box_widget.setStyleSheet("""
+                   QWidget {
+                       background-color: #E0FFFF; 
+                       border-radius: 15px;
+                       padding: 20px;
+                       max-width: 400px;
+                       margin: 0 auto;
+                       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                   }
+               """)
+
+        quote_label = QLabel(f"\"{random_quote}\"", self)
+        quote_label.setStyleSheet("""
+                   font-size: 18px;
+                   font-weight: bold;
+                   color: #333;
+                   font-family: 'Segoe UI', Arial, sans-serif;
+                   text-align: center;
+               """)
+        quote_box_layout.addWidget(quote_label)
+
+        layout.addWidget(quote_box_widget, alignment=Qt.AlignCenter)
+
+
+    def toggle_about_us(self):
+        self.features_section.hide()
+        self.contact_section.hide()
+        self.about_us_section.setVisible(not self.about_us_section.isVisible())
+
+
+    def toggle_features(self):
+        self.about_us_section.hide()
+        self.contact_section.hide()
+        self.features_section.setVisible(not self.features_section.isVisible())
+
+
+    def toggle_contact(self):
+        self.about_us_section.hide()
+        self.features_section.hide()
+        self.contact_section.setVisible(not self.contact_section.isVisible())
+
 
     def switch_to_login(self):
         self.central_widget.setCurrentIndex(1)  # Switch to login
@@ -1803,7 +1972,7 @@ class LoginSignupApp(QWidget):
             success_label.setText("Message sent! We'll get back to you shortly.")
             success_label.setStyleSheet("""
                 font-size: 16px;
-                color: #42a5f5;  /* Light blue color for success message */
+                color: purple;  /* Light blue color for success message */
                 margin-top: 10px;
                 font-weight: bold;
             """)
