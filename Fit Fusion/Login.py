@@ -3,7 +3,8 @@ import random
 import sys
 import sqlite3
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QStackedWidget, \
-    QTabWidget, QSizePolicy, QHBoxLayout, QMessageBox, QTextEdit, QSlider, QComboBox, QDialog, QProgressBar, QScrollArea
+    QTabWidget, QSizePolicy, QHBoxLayout, QMessageBox, QTextEdit, QSlider, QComboBox, QDialog, QProgressBar, \
+    QScrollArea, QGridLayout, QAction
 from PyQt5.QtCore import Qt, QTimer, QSize
 from PyQt5.QtGui import QPixmap, QBrush, QPalette, QIcon
 import speech_recognition as sr  # Added for voice recognition
@@ -359,7 +360,7 @@ class LoginSignupApp(QWidget):
         main_layout = QVBoxLayout(main_widget)
 
         # Set background image
-        self.set_background_image("background_image_dark.png")
+        self.set_background_image("full-shot-couple-doing-workout-exercises.jpg")
 
         # HEADER SECTION
         self.create_header(main_layout)
@@ -391,7 +392,7 @@ class LoginSignupApp(QWidget):
         header_layout.addWidget(logo_label)
 
         additional_logo_label = QLabel(self)
-        additional_logo_label.setPixmap(QPixmap("path/to/additional_logo.png"))  # Replace with actual image path
+        additional_logo_label.setPixmap(QPixmap("email_logo.png"))  # Replace with actual image path
         additional_logo_label.setScaledContents(True)
         additional_logo_label.setMaximumSize(100, 100)
         header_layout.addWidget(additional_logo_label)
@@ -429,7 +430,7 @@ class LoginSignupApp(QWidget):
         nav_widget.setLayout(nav_layout)
         nav_widget.setStyleSheet("""
             QWidget {
-                background-color: #E0FFFF;  /* Very Light Blue */
+                background-color: white;  
                 border-radius: 15px;
                 padding: 10px;
                 box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -442,46 +443,55 @@ class LoginSignupApp(QWidget):
         layout.addLayout(header_layout)
 
     def create_info_sections(self, layout):
-        self.about_us_section = self.create_info_section("About FitFusion",
-                                                         "FitFusion is your personal fitness companion, helping you achieve your goals. "
-                                                         "Our mission is to make fitness accessible, enjoyable, and efficient for everyone. "
-                                                         "Whether you're a beginner or a pro, FitFusion has something for you.")
+        self.about_us_section = self.create_info_section(
+            "About FitFusion",
+            "FitFusion is your personal fitness companion, helping you achieve your goals. "
+            "Our mission is to make fitness accessible, enjoyable, and efficient for everyone. "
+            "Whether you're a beginner or a pro, FitFusion has something for you."
+        )
         layout.addWidget(self.about_us_section)
 
-        self.features_section = self.create_info_section("Features",
-                                                         "<ul>"
-                                                         "<li><strong>Meal Planning:</strong> Personalized meal plans to meet your nutritional needs.</li>"
-                                                         "<li><strong>Fitness Tracking:</strong> Track your workouts, progress, and set goals.</li>"
-                                                         "<li><strong>AI-Driven Advice:</strong> Get tailored fitness advice based on your data and preferences.</li>"
-                                                         "<li><strong>Community Support:</strong> Join groups, share your progress, and get motivated.</li>"
-                                                         "</ul>")
+        self.features_section = self.create_info_section(
+            "Features",
+            "<ul>"
+            "<li><strong>Meal Planning:</strong> Personalized meal plans to meet your nutritional needs.</li>"
+            "<li><strong>Fitness Tracking:</strong> Track your workouts, progress, and set goals.</li>"
+            "<li><strong>AI-Driven Advice:</strong> Get tailored fitness advice based on your data and preferences.</li>"
+            "<li><strong>Community Support:</strong> Join groups, share your progress, and get motivated.</li>"
+            "</ul>"
+        )
         layout.addWidget(self.features_section)
 
-        self.contact_section = self.create_info_section("Contact Us",
-                                                        "Have questions or need support? Reach out to us!<br>"
-                                                        "Email: <a href='mailto:contact@fitfusion.com' style='color: #0057B7;'>contact@fitfusion.com</a><br>"
-                                                        "Phone: +1-800-123-4567<br>"
-                                                        "Follow us on social media for updates and tips:<br>"
-                                                        "<a href='https://twitter.com/fitfusion' style='color: #0057B7;'>Twitter</a> | "
-                                                        "<a href='https://www.facebook.com/fitfusion' style='color: #0057B7;'>Facebook</a> | "
-                                                        "<a href='https://www.instagram.com/fitfusion' style='color: #0057B7;'>Instagram</a>")
+        self.contact_section = self.create_info_section(
+            "Contact Us",
+            "Have questions or need support? Reach out to us!<br>"
+            "Email: <a href='mailto:contact@fitfusion.com' style='color: #0057B7;'>contact@fitfusion.com</a><br>"
+            "Phone: +1-800-123-4567<br>"
+            "Follow us on social media for updates and tips:<br>"
+            "<a href='https://twitter.com/fitfusion' style='color: #0057B7;'>Twitter</a> | "
+            "<a href='https://www.facebook.com/fitfusion' style='color: #0057B7;'>Facebook</a> | "
+            "<a href='https://www.instagram.com/fitfusion' style='color: #0057B7;'>Instagram</a>"
+        )
         layout.addWidget(self.contact_section)
 
     def create_info_section(self, title, content):
         section = QWidget()
         layout = QVBoxLayout(section)
         section.setStyleSheet("""
-               QWidget {
-                   background-color: #E0FFFF; 
-                   border-radius: 15px;
-                   padding: 20px;
-                   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-                   margin-top: 10px;
-               }
-           """)
-        title_label = QLabel(f"<h2 style='color: {self.DARK_BLUE};'>{title}</h2>")
-        content_label = QLabel(f"<div style='color: #333;'>{content}</div>")
-        content_label.setStyleSheet("font-size: 16px; font-family: 'Segoe UI', Arial, sans-serif;")
+            QWidget {
+                background-color: #E0FFFF; 
+                border-radius: 15px;
+                padding: 20px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                margin-top: 10px;
+            }
+        """)
+
+        title_label = QLabel(f"<h2 style='color: #0057B7;'>{title}</h2>")  # Use direct color code
+        content_label = QLabel(content)
+        content_label.setStyleSheet("font-size: 16px; font-family: 'Segoe UI', Arial, sans-serif; color: #333;")
+        content_label.setWordWrap(True)  # Enable word wrap to properly display multiline text
+
         layout.addWidget(title_label)
         layout.addWidget(content_label)
         section.hide()
@@ -492,7 +502,7 @@ class LoginSignupApp(QWidget):
         box_layout = QVBoxLayout(box_widget)
         box_widget.setStyleSheet("""
                QWidget {
-                   background-color: #E0FFFF; 
+                   background-color: white; 
                    border-radius: 15px;
                    padding: 20px;
                    max-width: 400px;
@@ -545,7 +555,7 @@ class LoginSignupApp(QWidget):
         quote_box_layout = QVBoxLayout(quote_box_widget)
         quote_box_widget.setStyleSheet("""
                    QWidget {
-                       background-color: #E0FFFF; 
+                       background-color: white; 
                        border-radius: 15px;
                        padding: 20px;
                        max-width: 400px;
@@ -585,6 +595,7 @@ class LoginSignupApp(QWidget):
         self.contact_section.setVisible(not self.contact_section.isVisible())
 
 
+
     def switch_to_login(self):
         self.central_widget.setCurrentIndex(1)  # Switch to login
         self.add_to_history(1)  # Add login UI to history
@@ -598,45 +609,61 @@ class LoginSignupApp(QWidget):
         login_widget = QWidget()
         layout = QVBoxLayout(login_widget)
 
+        # Login Box
+        box_widget = QWidget()
+        box_layout = QVBoxLayout(box_widget)
+        box_widget.setStyleSheet("""
+            QWidget {
+                background-color: #E0FFFF;  /* Very Light Blue */
+                border-radius: 15px;
+                padding: 30px;  /* Increased padding for better spacing */
+                max-width: 600px;  /* Increased width for a larger box */
+                margin: 20px auto;  /* Increased margin for better positioning */
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            }
+        """)
+
         # Login Form UI with Custom Styling
         email_label = QLabel("Email: ", self)
-        email_label.setStyleSheet("font-size: 30px; color: white; font-weight: bold;")
-        layout.addWidget(email_label)
+        email_label.setStyleSheet("font-size: 30px; color: #0057B7; font-weight: bold;")  # Dark Blue
+        box_layout.addWidget(email_label)
 
         self.login_email = QLineEdit(self)
         self.set_text_field_style(self.login_email)
         self.login_email.setPlaceholderText("Enter your email")
-        layout.addWidget(self.login_email)
+        box_layout.addWidget(self.login_email)
 
         password_label = QLabel("Password: ", self)
-        password_label.setStyleSheet("font-size: 30px; color: white; font-weight: bold;")
-        layout.addWidget(password_label)
+        password_label.setStyleSheet("font-size: 30px; color: #0057B7; font-weight: bold;")  # Dark Blue
+        box_layout.addWidget(password_label)
 
         self.login_password = QLineEdit(self)
         self.set_text_field_style(self.login_password)
         self.login_password.setEchoMode(QLineEdit.Password)
         self.login_password.setPlaceholderText("Enter your password")
-        layout.addWidget(self.login_password)
+        box_layout.addWidget(self.login_password)
 
         # Login button with animation and feedback
         btn_login = QPushButton("Login", self)
         self.set_button_style(btn_login)
         btn_login.setStyleSheet(btn_login.styleSheet() + "font-size: 25px; margin-top: 20px; font-weight: bold;")
         btn_login.clicked.connect(self.on_login_button_click)
-        layout.addWidget(btn_login)
-
+        box_layout.addWidget(btn_login)
 
         # Feedback label
         self.login_feedback = QLabel("", self)
-        self.login_feedback.setStyleSheet("font-size: 25px; color: white;")
-        layout.addWidget(self.login_feedback)
-
+        self.login_feedback.setStyleSheet("font-size: 25px; color: #0057B7;")  # Dark Blue
+        box_layout.addWidget(self.login_feedback)
 
         # Forgot Password Button
         btn_forgot_password = QPushButton("Forgot Password?", self)
         self.set_button_style(btn_forgot_password)
         btn_forgot_password.clicked.connect(self.open_forgot_password_window)
-        layout.addWidget(btn_forgot_password)
+        box_layout.addWidget(btn_forgot_password)
+
+        layout.addStretch(1)
+        layout.addWidget(box_widget, alignment=Qt.AlignCenter)
+        layout.addStretch(1)
 
         self.central_widget.addWidget(login_widget)
 
@@ -692,27 +719,45 @@ class LoginSignupApp(QWidget):
         forgot_widget = QWidget()
         layout = QVBoxLayout(forgot_widget)
 
+        # Forgot Password Box
+        box_widget = QWidget()
+        box_layout = QVBoxLayout(box_widget)
+        box_widget.setStyleSheet("""
+            QWidget {
+                background-color: #E0FFFF;  /* Very Light Blue */
+                border-radius: 15px;
+                padding: 20px;
+                max-width: 400px;
+                margin: 0 auto;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            }
+        """)
+
         # Label and input for email
         email_label = QLabel("Enter your registered email:", self)
-        email_label.setStyleSheet("font-size: 25px; color: white; font-weight: bold;")
-        layout.addWidget(email_label)
+        email_label.setStyleSheet("font-size: 25px; color: #0057B7; font-weight: bold;")  # Dark Blue
+        box_layout.addWidget(email_label)
 
         self.forgot_email = QLineEdit(self)
         self.set_text_field_style(self.forgot_email)
         self.forgot_email.setPlaceholderText("Enter your email")
-        layout.addWidget(self.forgot_email)
+        box_layout.addWidget(self.forgot_email)
 
         # Submit button for password reset
         btn_reset = QPushButton("Reset Password", self)
         self.set_button_style(btn_reset)
         btn_reset.setStyleSheet(btn_reset.styleSheet() + "font-size: 25px; margin-top: 20px; font-weight: bold;")
         btn_reset.clicked.connect(self.reset_password)
-        layout.addWidget(btn_reset)
+        box_layout.addWidget(btn_reset)
 
         # Feedback label
         self.forgot_password_feedback = QLabel("", self)
-        self.forgot_password_feedback.setStyleSheet("font-size: 25px; color: white;")
-        layout.addWidget(self.forgot_password_feedback)
+        self.forgot_password_feedback.setStyleSheet("font-size: 25px; color: #0057B7;")  # Dark Blue
+        box_layout.addWidget(self.forgot_password_feedback)
+
+        layout.addStretch(1)
+        layout.addWidget(box_widget, alignment=Qt.AlignCenter)
+        layout.addStretch(1)
 
         self.central_widget.addWidget(forgot_widget)
 
@@ -727,54 +772,70 @@ class LoginSignupApp(QWidget):
         # Here you would typically send the email for password reset
         # For now, we will simulate this with a message
         self.forgot_password_feedback.setText(
-            "Password reset instructions sent to your email! Please check your inbox.")
+            "Password reset instructions sent")
         # Do not switch back to the main UI; stay on the forgot password screen
 
-    def init_signup_ui(self):
-        # Signup UI
-        signup_widget = QWidget()
-        layout = QVBoxLayout(signup_widget)
+    def init_login_ui(self):
+        login_widget = QWidget()
+        layout = QVBoxLayout(login_widget)
 
-        # Signup Form UI with Custom Styling
-        name_label = QLabel("User Name: ", self)
-        name_label.setStyleSheet("font-size: 30px; color: white;")
-        layout.addWidget(name_label)
+        # Login Box
+        box_widget = QWidget()
+        box_layout = QVBoxLayout(box_widget)
+        box_widget.setStyleSheet("""
+            QWidget {
+                background-color: #E0FFFF; /* Very Light Blue */
+                border-radius: 15px;
+                padding: 20px;
+                max-width: 400px;
+                margin: 0 auto;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            }
+        """)
 
-        self.signup_name = QLineEdit(self)
-        self.set_text_field_style(self.signup_name)
-        layout.addWidget(self.signup_name)
+        # Login Form UI with Custom Styling
+        email_label = QLabel("Email: ", self)
+        email_label.setStyleSheet("font-size: 30px; color: #0057B7; font-weight: bold;")  # Dark Blue
+        box_layout.addWidget(email_label)
 
-        email_label = QLabel("User Email: ", self)
-        email_label.setStyleSheet("font-size: 30px; color: white;")
-        layout.addWidget(email_label)
-
-        self.signup_email = QLineEdit(self)
-        self.set_text_field_style(self.signup_email)
-        layout.addWidget(self.signup_email)
+        self.login_email = QLineEdit(self)
+        self.set_text_field_style(self.login_email)
+        self.login_email.setPlaceholderText("Enter your email")
+        box_layout.addWidget(self.login_email)
 
         password_label = QLabel("Password: ", self)
-        password_label.setStyleSheet("font-size: 30px; color: white;")
-        layout.addWidget(password_label)
+        password_label.setStyleSheet("font-size: 30px; color: #0057B7; font-weight: bold;")  # Dark Blue
+        box_layout.addWidget(password_label)
 
-        self.signup_password = QLineEdit(self)
-        self.set_text_field_style(self.signup_password)
-        self.signup_password.setEchoMode(QLineEdit.Password)
-        layout.addWidget(self.signup_password)
+        self.login_password = QLineEdit(self)
+        self.set_text_field_style(self.login_password)
+        self.login_password.setEchoMode(QLineEdit.Password)
+        self.login_password.setPlaceholderText("Enter your password")
+        box_layout.addWidget(self.login_password)
+
+        # Login button with animation and feedback
+        btn_login = QPushButton("Login", self)
+        self.set_button_style(btn_login)
+        btn_login.setStyleSheet(btn_login.styleSheet() + "font-size: 25px; margin-top: 20px; font-weight: bold;")
+        btn_login.clicked.connect(self.on_login_button_click)
+        box_layout.addWidget(btn_login)
 
         # Feedback label
-        self.signup_feedback = QLabel("", self)
-        self.signup_feedback.setStyleSheet("font-size: 25px; color: white;")
-        layout.addWidget(self.signup_feedback)
+        self.login_feedback = QLabel("", self)
+        self.login_feedback.setStyleSheet("font-size: 25px; color: #0057B7;")  # Dark Blue
+        box_layout.addWidget(self.login_feedback)
 
-        # Sign up button
-        btn_signup = QPushButton("Signup", self)
-        self.set_button_style(btn_signup)
-        btn_signup.setStyleSheet(btn_signup.styleSheet() + "font-size: 25px; margin-top: 20px;")
-        btn_signup.clicked.connect(self.signup_database)
-        layout.addWidget(btn_signup)
+        # Forgot Password Button
+        btn_forgot_password = QPushButton("Forgot Password?", self)
+        self.set_button_style(btn_forgot_password)
+        btn_forgot_password.clicked.connect(self.open_forgot_password_window)
+        box_layout.addWidget(btn_forgot_password)
 
-        self.central_widget.addWidget(signup_widget)
+        layout.addStretch(1)
+        layout.addWidget(box_widget, alignment=Qt.AlignCenter)
+        layout.addStretch(1)
 
+        self.central_widget.addWidget(login_widget)
     def initialize_database(self):
         """Ensure the database schema is up to date"""
         conn = sqlite3.connect("1.db")
@@ -809,11 +870,159 @@ class LoginSignupApp(QWidget):
         conn.commit()
         conn.close()
 
-    import sqlite3
-    import datetime
-    from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton
+    def init_signup_ui(self):
+        # Signup UI
+        signup_widget = QWidget()
+        layout = QVBoxLayout(signup_widget)
+        layout.setAlignment(Qt.AlignCenter)
 
-    # Your existing init_signup_ui and initialize_database functions here...
+        # Main Signup Box
+        box_widget = QWidget()
+        box_layout = QVBoxLayout(box_widget)
+        box_widget.setStyleSheet("""
+            QWidget {
+                background-color: white;  /* Background color */
+                border-radius: 20px;
+                padding: 40px;
+                max-width: 800px;  /* Increased width for better fitting elements */
+                margin: 30px auto;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            }
+        """)
+
+        # Header
+        header_label = QLabel("Create Your Account", self)
+        header_label.setStyleSheet("font-size: 36px; color: #0057B7; font-weight: bold; margin-bottom: 20px;")
+        header_label.setAlignment(Qt.AlignCenter)
+        box_layout.addWidget(header_label)
+
+        # User Name Box
+        user_name_box = QWidget()
+        user_name_layout = QVBoxLayout(user_name_box)
+        user_name_box.setStyleSheet("""
+            QWidget {
+                background-color: #E0FFFF;  /* Very Light Blue */
+                border-radius: 10px;
+                padding: 10px;
+                margin-bottom: 15px;  /* Spacing between boxes */
+            }
+        """)
+        self.signup_name = self.create_labeled_input(user_name_layout, "User Name:", "Enter your name", "profile_6915911.png")
+
+        box_layout.addWidget(user_name_box)
+
+        # User Email Box
+        user_email_box = QWidget()
+        user_email_layout = QVBoxLayout(user_email_box)
+        user_email_box.setStyleSheet("""
+            QWidget {
+                background-color: #E0FFFF;  /* Very Light Blue */
+                border-radius: 10px;
+                padding: 10px;
+                margin-bottom: 15px;  /* Spacing between boxes */
+            }
+        """)
+        self.signup_email = self.create_labeled_input(user_email_layout, "User Email:", "Enter your email", "email_552486.png")
+
+        box_layout.addWidget(user_email_box)
+
+        # Password Box
+        password_box = QWidget()
+        password_layout = QVBoxLayout(password_box)
+        password_box.setStyleSheet("""
+            QWidget {
+                background-color: #E0FFFF;  /* Very Light Blue */
+                border-radius: 10px;
+                padding: 10px;
+                margin-bottom: 15px;  /* Spacing between boxes */
+            }
+        """)
+        self.signup_password = self.create_labeled_input(password_layout, "Password:", "Enter your password",
+                                                         "lock_17777135.png", is_password=True)
+
+        box_layout.addWidget(password_box)
+        '''        # Confirm Password Box
+        confirm_password_box = QWidget()
+        confirm_password_layout = QVBoxLayout(confirm_password_box)
+        confirm_password_box.setStyleSheet("""
+            QWidget {
+                background-color: #E0FFFF;  /* Very Light Blue */
+                border-radius: 10px;
+                padding: 10px;
+                margin-bottom: 15px;  /* Spacing between boxes */
+            }
+        """)
+        self.create_labeled_input(confirm_password_layout, "Confirm Password:", "Re-enter your password",
+                                  "lock_17777135.png", is_password=True)
+        box_layout.addWidget(confirm_password_box)
+        '''
+
+        # Feedback label
+        self.signup_feedback = QLabel("", self)
+        self.signup_feedback.setStyleSheet("font-size: 20px; color: #FF0000; margin-top: 15px;")  # Red for feedback
+        self.signup_feedback.setAlignment(Qt.AlignCenter)
+        box_layout.addWidget(self.signup_feedback)
+
+        # Sign up button
+        btn_signup = QPushButton("Signup", self)
+        self.set_button_style(btn_signup)
+        btn_signup.setStyleSheet(btn_signup.styleSheet() + """
+            font-size: 25px; 
+            margin-top: 20px; 
+            font-weight: bold;
+            min-width: 150px;  /* Minimum width */
+            min-height: 40px;  /* Minimum height */
+        """)
+        btn_signup.clicked.connect(self.signup_database)
+        box_layout.addWidget(btn_signup)
+
+        # Footer with Terms and Conditions
+        footer_label = QLabel("By signing up, you agree to our Terms and Conditions.", self)
+        footer_label.setStyleSheet("font-size: 14px; color: #808080; margin-top: 20px;")
+        footer_label.setAlignment(Qt.AlignCenter)
+        box_layout.addWidget(footer_label)
+
+        layout.addWidget(box_widget)
+        self.central_widget.addWidget(signup_widget)
+
+    def create_labeled_input(self, layout, label_text, placeholder_text, logo_path, is_password=False):
+        """Helper method to create labeled input fields with logo placeholders."""
+        container_widget = QWidget()
+        container_layout = QHBoxLayout(container_widget)
+        container_layout.setContentsMargins(0, 0, 0, 0)
+        container_layout.setSpacing(10)
+
+        label = QLabel(label_text, self)
+        label.setStyleSheet("font-size: 24px; color: #0057B7; font-weight: bold; margin-right: 10px;")
+        container_layout.addWidget(label)
+
+        input_field = QLineEdit(self)
+        self.set_text_field_style(input_field)
+        input_field.setPlaceholderText(placeholder_text)
+        input_field.setFixedHeight(50)
+        input_field.setStyleSheet("""
+            QLineEdit {
+                font-size: 18px;
+                padding-left: 40px;
+            }
+            QLineEdit::placeholder {
+                font-size: 18px;
+                color: #999;
+            }
+        """)
+
+        # Add logo
+        icon_pixmap = QPixmap(logo_path).scaled(24, 24, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        action = QAction(self)
+        action.setIcon(QIcon(icon_pixmap))
+        input_field.addAction(action, QLineEdit.LeadingPosition)
+
+        if is_password:
+            input_field.setEchoMode(QLineEdit.Password)
+
+        container_layout.addWidget(input_field)
+        layout.addWidget(container_widget)
+        return input_field
 
     def signup_database(self):
         """Handle database actions for signup"""
@@ -1968,14 +2177,14 @@ class LoginSignupApp(QWidget):
                 """)
                 return
 
-            # Show a confirmation message within the dialog
+            '''# Show a confirmation message within the dialog
             success_label.setText("Message sent! We'll get back to you shortly.")
             success_label.setStyleSheet("""
                 font-size: 16px;
                 color: purple;  /* Light blue color for success message */
                 margin-top: 10px;
                 font-weight: bold;
-            """)
+            """)'''
             name_input.clear()
             email_input.clear()
             message_input.clear()
@@ -1995,7 +2204,8 @@ class LoginSignupApp(QWidget):
         self.central_widget.setCurrentIndex(0)  # Go back to main UI
         self.add_to_history(0)  # Add main UI to history
 
-    def set_background_image(self, image_path=None):
+
+'''def set_background_image(self, image_path=None):
         """Set a gradient or image background."""
         if image_path:
             pixmap = QPixmap(image_path)
@@ -2012,8 +2222,12 @@ class LoginSignupApp(QWidget):
                 }
             """)
 
+'''
+
+
 
 if __name__ == "__main__":
+
     api_key = "e5968cb05a3b42a4845c016350e83f17"
     gemini_api_key = "AIzaSyA1RJISbzG7WJ0T_ZRQIEVj_WWkhiHKml4"
 
