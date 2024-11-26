@@ -614,7 +614,7 @@ class LoginSignupApp(QWidget):
         box_layout = QVBoxLayout(box_widget)
         box_widget.setStyleSheet("""
             QWidget {
-                background-color: #E0FFFF;  /* Very Light Blue */
+                background-color: white;  /* Very Light Blue */
                 border-radius: 15px;
                 padding: 30px;  /* Increased padding for better spacing */
                 max-width: 600px;  /* Increased width for a larger box */
@@ -702,12 +702,12 @@ class LoginSignupApp(QWidget):
         if row:
             user_id, user_name = row  # Retrieve ID and name
             self.current_user_id = user_id  # Store the user ID in an instance attribute
-            self.login_feedback.setStyleSheet("font-size: 25px; color: white;")
+            self.login_feedback.setStyleSheet("font-size: 25px; color: #0057B7;")
             self.login_feedback.setText(f"Login successful. Welcome {user_name}!")
             self.show_welcome_frame(user_name)  # Show welcome frame upon successful login
         else:
-            self.login_feedback.setStyleSheet("font-size: 25px; color: white;")
-            self.login_feedback.setText("No such user found. Please sign up or check your credentials.")
+            self.login_feedback.setStyleSheet("font-size: 25px; color:#0057B7 ;")
+            self.login_feedback.setText("Account not recognized. Sign up")
 
     def open_forgot_password_window(self, event):
         """Open the forgot password dialog"""
@@ -724,7 +724,7 @@ class LoginSignupApp(QWidget):
         box_layout = QVBoxLayout(box_widget)
         box_widget.setStyleSheet("""
             QWidget {
-                background-color: #E0FFFF;  /* Very Light Blue */
+                background-color: white;  /* Very Light Blue */
                 border-radius: 15px;
                 padding: 20px;
                 max-width: 400px;
@@ -907,8 +907,8 @@ class LoginSignupApp(QWidget):
                 margin-bottom: 0px;  /* Spacing between boxes */
             }
         """)
-        self.signup_name = self.create_labeled_input(user_name_layout, "User Name:", "Enter your name", "profile_6915911.png")
-
+        self.signup_name = self.create_labeled_input(user_name_layout, "User Name:", "Enter your name",
+                                                     "profile_6915911.png")
         box_layout.addWidget(user_name_box)
 
         # User Email Box
@@ -922,8 +922,8 @@ class LoginSignupApp(QWidget):
                 margin-bottom: 0px;  /* Spacing between boxes */
             }
         """)
-        self.signup_email = self.create_labeled_input(user_email_layout, "User Email:", "Enter your email", "email_552486.png")
-
+        self.signup_email = self.create_labeled_input(user_email_layout, "User Email:", "Enter your email",
+                                                      "email_552486.png")
         box_layout.addWidget(user_email_box)
 
         # Password Box
@@ -939,23 +939,23 @@ class LoginSignupApp(QWidget):
         """)
         self.signup_password = self.create_labeled_input(password_layout, "Password:", "Enter your password",
                                                          "lock_17777135.png", is_password=True)
-
         box_layout.addWidget(password_box)
-        '''        # Confirm Password Box
+
+        # Confirm Password Box
         confirm_password_box = QWidget()
         confirm_password_layout = QVBoxLayout(confirm_password_box)
         confirm_password_box.setStyleSheet("""
             QWidget {
                 background-color: #E0FFFF;  /* Very Light Blue */
                 border-radius: 10px;
-                padding: 10px;
-                margin-bottom: 15px;  /* Spacing between boxes */
+                padding: 1px;
+                margin-bottom: 0px;  /* Spacing between boxes */
             }
         """)
-        self.create_labeled_input(confirm_password_layout, "Confirm Password:", "Re-enter your password",
-                                  "lock_17777135.png", is_password=True)
+        self.confirm_password = self.create_labeled_input(confirm_password_layout, "Confirm Password:",
+                                                          "Re-enter your password",
+                                                          "lock_17777135.png", is_password=True)
         box_layout.addWidget(confirm_password_box)
-        '''
 
         # Feedback label
         self.signup_feedback = QLabel("", self)
@@ -973,7 +973,7 @@ class LoginSignupApp(QWidget):
             min-width: 150px;  /* Minimum width */
             min-height: 40px;  /* Minimum height */
         """)
-        btn_signup.clicked.connect(self.signup_database)
+        btn_signup.clicked.connect(self.on_signup_button_click)
         box_layout.addWidget(btn_signup)
 
         # Footer with Terms and Conditions
@@ -1023,6 +1023,17 @@ class LoginSignupApp(QWidget):
         container_layout.addWidget(input_field)
         layout.addWidget(container_widget)
         return input_field
+
+    def on_signup_button_click(self):
+        """Handle the signup button click event."""
+        password = self.signup_password.text()
+        confirm_password = self.confirm_password.text()
+
+        if password != confirm_password:
+            self.signup_feedback.setText("Passwords do not match. Please try again.")
+        else:
+            self.signup_feedback.setText("")
+            self.signup_database()
 
     def signup_database(self):
         """Handle database actions for signup"""
@@ -1146,28 +1157,30 @@ class LoginSignupApp(QWidget):
         # Apply the updated style sheet for colorful and fitting tab buttons
         self.tabs.setStyleSheet("""
             QTabBar::tab {
-                background-color: #E1BEE7;  /* Light purple background */
-                color: black;               /* Black text for contrast */
+                background-color: #B0E0E6;  /* Pale Blue Background */
+                color: #0057B7;             /* Dark Blue Text */
                 font-size: 14px;            /* Font size */
                 padding: 10px 25px;         /* Ensure proper padding for better visibility */
-                border: 1px solid #ccc;     /* Border around tabs */
+                border: 1px solid #0057B7;  /* Dark Blue Border */
                 border-bottom: none;        /* Smooth look */
                 border-radius: 4px;         /* Rounded corners */
                 min-width: 100px;           /* Minimum width to prevent truncation */
             }
 
             QTabBar::tab:selected {
-                background-color: #D81B60;  /* Darker purple for selected tab */
+                background-color: #0057B7;  /* Dark Blue for Selected Tab */
+                color: #FFFFFF;             /* White Text for Contrast */
                 font-weight: bold;          /* Bold text for selected tab */
             }
 
             QTabBar::tab:hover {
-                background-color: #D5006D;  /* Lighter purple on hover */
+                background-color: #87CEEB;  /* Light Sky Blue on Hover */
+                color: #0057B7;             /* Dark Blue Text */
             }
 
             QTabWidget::pane {
-                border: 1px solid #ccc;     /* Border around tab content */
-                border-top: none;           /* Merge content with tabs */
+                border: 2px solid #0057B7;  /* Dark Blue Border Around Tab Content */
+                background-color: #E0FFFF;  /* Very Light Blue Background for Pane */
             }
         """)
 
@@ -1195,107 +1208,113 @@ class LoginSignupApp(QWidget):
         workout_tab = QWidget()
         layout = QVBoxLayout(workout_tab)
 
-        # Title with updated label color closer to the theme
+        # Title with updated label color matching the blue theme
         label = QLabel("Workout Planner", self)
         label.setAlignment(Qt.AlignCenter)
         label.setStyleSheet("""
             font-size: 30px;
             font-weight: bold;
-            color: #D81B60;  /* Soft pink for the label text */
-            background-color: #F3E5F5;  /* Very light lavender for the background */
+            color: #0057B7;  /* Dark Blue for the label text */
+            background-color: #B0E0E6;  /* Pale Blue for the background */
             padding: 10px;
+            border-radius: 5px;
         """)
         layout.addWidget(label)
 
         # Muscle Group Label
         muscle_group_label = QLabel("Muscle Group:", self)
-        muscle_group_label.setStyleSheet("font-size: 16px; color: white;")
+        muscle_group_label.setStyleSheet("font-size: 16px; color: #0057B7;")
         layout.addWidget(muscle_group_label)
 
         # Muscle Group ComboBox
         self.muscle_group_combo = QComboBox(self)
         self.muscle_group_combo.addItems([
-            "","Abdominals", "Abductors", "Adductors", "Biceps", "Calves",
+            "", "Abdominals", "Abductors", "Adductors", "Biceps", "Calves",
             "Chest", "Forearms", "Glutes", "Hamstrings", "Lats", "Lower Back",
             "Middle Back", "Neck", "Quadriceps", "Traps", "Triceps"
         ])
         self.muscle_group_combo.setStyleSheet("""
-            background-color: #f0f0f0;
+            background-color: #E0FFFF;  /* Very Light Blue */
             font-size: 16px;
             padding: 5px;
-            border: 2px solid #E1BEE7;  /* Light purple border */
+            border: 2px solid #0057B7;  /* Dark Blue Border */
             border-radius: 5px;
+            color: #0057B7;             /* Dark Blue Text */
         """)
         layout.addWidget(self.muscle_group_combo)
 
         # Exercise Name Label
         exercise_name_label = QLabel("Exercise Name:", self)
-        exercise_name_label.setStyleSheet("font-size: 16px; color: white;")
+        exercise_name_label.setStyleSheet("font-size: 16px; color: #0057B7;")
         layout.addWidget(exercise_name_label)
 
         # Exercise Name Input
         self.exercise_name_input = QLineEdit(self)
         self.exercise_name_input.setPlaceholderText("Partial Exercise Name (e.g., press, squat)")
         self.exercise_name_input.setStyleSheet("""
-            background-color: #f0f0f0;
+            background-color: #E0FFFF;  /* Very Light Blue */
             font-size: 16px;
             padding: 5px;
-            border: 2px solid #E1BEE7;  /* Light purple border */
+            border: 2px solid #0057B7;  /* Dark Blue Border */
             border-radius: 5px;
+            color: #0057B7;             /* Dark Blue Text */
         """)
         layout.addWidget(self.exercise_name_input)
 
         # Exercise Type Label
         exercise_type_label = QLabel("Exercise Type:", self)
-        exercise_type_label.setStyleSheet("font-size: 16px; color: white;")
+        exercise_type_label.setStyleSheet("font-size: 16px; color: #0057B7;")
         layout.addWidget(exercise_type_label)
 
         # Exercise Type ComboBox
         self.exercise_type_combo = QComboBox(self)
         self.exercise_type_combo.addItems([
-          "","Cardio", "Olympic Weightlifting", "Plyometrics", "Powerlifting",
+            "", "Cardio", "Olympic Weightlifting", "Plyometrics", "Powerlifting",
             "Strength", "Stretching", "Strongman"
         ])
         self.exercise_type_combo.setStyleSheet("""
-            background-color: #f0f0f0;
+            background-color: #E0FFFF;  /* Very Light Blue */
             font-size: 16px;
             padding: 5px;
-            border: 2px solid #E1BEE7;  /* Light purple border */
+            border: 2px solid #0057B7;  /* Dark Blue Border */
             border-radius: 5px;
+            color: #0057B7;             /* Dark Blue Text */
         """)
         layout.addWidget(self.exercise_type_combo)
 
         # Difficulty Label
         difficulty_label = QLabel("Difficulty Level:", self)
-        difficulty_label.setStyleSheet("font-size: 16px; color: white;")
+        difficulty_label.setStyleSheet("font-size: 16px; color: #0057B7;")
         layout.addWidget(difficulty_label)
 
         # Difficulty ComboBox
         self.difficulty_combo = QComboBox(self)
-        self.difficulty_combo.addItems(["","Beginner", "Intermediate", "Expert"])
+        self.difficulty_combo.addItems(["", "Beginner", "Intermediate", "Expert"])
         self.difficulty_combo.setStyleSheet("""
-            background-color: #f0f0f0;
+            background-color: #E0FFFF;  /* Very Light Blue */
             font-size: 16px;
             padding: 5px;
-            border: 2px solid #E1BEE7;  /* Light purple border */
+            border: 2px solid #0057B7;  /* Dark Blue Border */
             border-radius: 5px;
+            color: #0057B7;             /* Dark Blue Text */
         """)
         layout.addWidget(self.difficulty_combo)
 
         # Duration Label
         duration_label = QLabel("Workout Duration (minutes):", self)
-        duration_label.setStyleSheet("font-size: 16px; color: white;")
+        duration_label.setStyleSheet("font-size: 16px; color: #0057B7;")
         layout.addWidget(duration_label)
 
         # Duration Input
         self.workout_duration_input = QLineEdit(self)
         self.workout_duration_input.setPlaceholderText("Workout Duration (minutes, e.g., 45)")
         self.workout_duration_input.setStyleSheet("""
-            background-color: #f0f0f0;
+            background-color: #E0FFFF;  /* Very Light Blue */
             font-size: 16px;
             padding: 5px;
-            border: 2px solid #E1BEE7;  /* Light purple border */
+            border: 2px solid #0057B7;  /* Dark Blue Border */
             border-radius: 5px;
+            color: #0057B7;             /* Dark Blue Text */
         """)
         layout.addWidget(self.workout_duration_input)
 
@@ -1303,16 +1322,15 @@ class LoginSignupApp(QWidget):
         generate_button = QPushButton("Generate Workout Plan", self)
         generate_button.setStyleSheet("""
             QPushButton {
-                background-color: #E1BEE7;  /* Light purple background */
-                color: black;               /* Black text for contrast */
-                font-size: 18px;            /* Increased font size */
-                padding: 10px 20px;         /* Padding for better visibility */
-                border: 1px solid #ccc;     /* Border around buttons */
-                border-radius: 4px;         /* Rounded corners */
-                cursor: pointer;           /* Change cursor to pointer */
+                background-color: #0057B7;  /* Dark Blue Background */
+                color: white;               /* White Text for Contrast */
+                font-size: 18px;            /* Increased Font Size */
+                padding: 10px 20px;         /* Padding for Better Visibility */
+                border-radius: 5px;         /* Rounded Corners */
+                cursor: pointer;            /* Change Cursor to Pointer */
             }
             QPushButton:hover {
-                background-color: #D5006D;  /* Darker purple on hover */
+                background-color: #003C88;  /* Darker Blue on Hover */
             }
         """)
         generate_button.clicked.connect(self.generate_workout_plan)
@@ -1322,12 +1340,12 @@ class LoginSignupApp(QWidget):
         self.workout_plan_output = QTextEdit(self)
         self.workout_plan_output.setReadOnly(True)
         self.workout_plan_output.setStyleSheet("""
-            background-color: #f9f9f9;
+            background-color: #E0FFFF;  /* Very Light Blue */
             font-size: 16px;
             padding: 10px;
-            border: 2px solid #E1BEE7;  /* Light purple border */
+            border: 2px solid #0057B7;  /* Dark Blue Border */
             border-radius: 5px;
-            color: #333;
+            color: #0057B7;             /* Dark Blue Text */
         """)
         layout.addWidget(self.workout_plan_output)
 
@@ -1362,7 +1380,7 @@ class LoginSignupApp(QWidget):
         self.workout_plan_output.setHtml(formatted_plan)
 
     def create_streak_tab(self):
-        """Create the Streak Tab UI with enhanced visual design and functionality."""
+        """Create the Streak Tab UI with a blue-themed design and functionality."""
         streak_tab = QWidget()
         layout = QVBoxLayout(streak_tab)
         layout.setContentsMargins(20, 20, 20, 20)
@@ -1373,9 +1391,10 @@ class LoginSignupApp(QWidget):
         title_label.setStyleSheet("""
             font-size: 30px;
             font-weight: bold;
-            color: #D81B60;  /* Soft pink for the label text */
-            background-color: #F3E5F5;  /* Very light lavender for the background */
+            color: #0057B7;  /* Dark Blue for the label text */
+            background-color: #B0E0E6;  /* Pale Blue for the background */
             padding: 10px;
+            border-radius: 5px;
         """)
         layout.addWidget(title_label)
 
@@ -1384,7 +1403,7 @@ class LoginSignupApp(QWidget):
         current_status_label.setAlignment(Qt.AlignCenter)
         current_status_label.setStyleSheet("""
             font-size: 20px;
-            color: white;
+            color: #0057B7;  /* Dark Blue */
             margin-bottom: 20px;
         """)
         layout.addWidget(current_status_label)
@@ -1398,7 +1417,7 @@ class LoginSignupApp(QWidget):
         self.current_streak_label.setStyleSheet("""
             font-size: 18px;
             color: white;
-            background-color: #4CAF50; /* Green */
+            background-color: #0057B7;  /* Dark Blue */
             padding: 10px;
             border-radius: 5px;
         """)
@@ -1410,7 +1429,7 @@ class LoginSignupApp(QWidget):
         self.longest_streak_label.setStyleSheet("""
             font-size: 18px;
             color: white;
-            background-color: #FF5733; /* Red */
+            background-color: #003C88;  /* Darker Blue */
             padding: 10px;
             border-radius: 5px;
         """)
@@ -1422,15 +1441,15 @@ class LoginSignupApp(QWidget):
         self.streak_progress_bar = QProgressBar()
         self.streak_progress_bar.setStyleSheet("""
             QProgressBar {
-                border: 2px solid #FFFFFF;
+                border: 2px solid #0057B7;  /* Dark Blue Border */
                 border-radius: 5px;
-                background: #333333;
+                background: #E0FFFF;       /* Very Light Blue */
                 text-align: center;
                 font-size: 16px;
-                color: white;
+                color: #0057B7;            /* Dark Blue Text */
             }
             QProgressBar::chunk {
-                background-color: #FFD700; /* Golden color */
+                background-color: #0057B7; /* Dark Blue for progress chunks */
                 width: 20px;
             }
         """)
@@ -1443,7 +1462,7 @@ class LoginSignupApp(QWidget):
         self.streak_progress_label.setAlignment(Qt.AlignCenter)
         self.streak_progress_label.setStyleSheet("""
             font-size: 16px;
-            color: white;
+            color: #0057B7;  /* Dark Blue */
             margin-top: 10px;
         """)
         layout.addWidget(self.streak_progress_label)
@@ -1562,80 +1581,103 @@ class LoginSignupApp(QWidget):
         bmi_tab = QWidget()
         layout = QVBoxLayout(bmi_tab)
 
+        # Title Label for BMI Visualization
         label = QLabel("BMI Visualization", self)
         label.setAlignment(Qt.AlignCenter)
         label.setStyleSheet("""
             font-size: 30px;
             font-weight: bold;
-            color: #D81B60;  /* Soft pink for the label text */
-            background-color: #F3E5F5;  /* Very light lavender for the background */
+            color: #0057B7;  /* Dark Blue for the label text */
+            background-color: #B0E0E6;  /* Pale Blue for the background */
             padding: 10px;
+            border-radius: 5px;
         """)
         layout.addWidget(label)
 
+        # Weight Input
         self.weight_input = QLineEdit(self)
         self.weight_input.setPlaceholderText("Weight (kg)")
         self.weight_input.setStyleSheet("""
-            font-size: 16px;           /* Smaller font size */
-            padding: 5px;              /* Reduced padding */
-            height: 25px;              /* Smaller height */
-            border: 1px solid #ccc;    /* Border */
-            border-radius: 5px;        /* Rounded corners */
-            margin-bottom: 5px;        /* Reduced margin for spacing */
+            font-size: 16px;
+            padding: 5px;
+            height: 30px;              /* Adjusted height for consistency */
+            border: 2px solid #0057B7; /* Dark Blue Border */
+            border-radius: 5px;
+            margin-bottom: 10px;
         """)
         layout.addWidget(self.weight_input)
 
+        # Height Input
         self.height_input = QLineEdit(self)
         self.height_input.setPlaceholderText("Height (cm)")
         self.height_input.setStyleSheet("""
-            font-size: 16px;           /* Smaller font size */
-            padding: 5px;              /* Reduced padding */
-            height: 25px;              /* Smaller height */
-            border: 1px solid #ccc;    /* Border */
-            border-radius: 5px;        /* Rounded corners */
-            margin-bottom: 5px;        /* Reduced margin for spacing */
+            font-size: 16px;
+            padding: 5px;
+            height: 30px;              /* Adjusted height for consistency */
+            border: 2px solid #0057B7; /* Dark Blue Border */
+            border-radius: 5px;
+            margin-bottom: 10px;
         """)
         layout.addWidget(self.height_input)
 
+        # Age Input
         self.age_input = QLineEdit(self)
         self.age_input.setPlaceholderText("Age")
         self.age_input.setStyleSheet("""
-            font-size: 16px;           /* Smaller font size */
-            padding: 5px;              /* Reduced padding */
-            height: 25px;              /* Smaller height */
-            border: 1px solid #ccc;    /* Border */
-            border-radius: 5px;        /* Rounded corners */
-            margin-bottom: 5px;        /* Reduced margin for spacing */
+            font-size: 16px;
+            padding: 5px;
+            height: 30px;              /* Adjusted height for consistency */
+            border: 2px solid #0057B7; /* Dark Blue Border */
+            border-radius: 5px;
+            margin-bottom: 10px;
         """)
         layout.addWidget(self.age_input)
 
+        # Calculate BMI Button
         calculate_button = QPushButton("Calculate BMI", self)
-        self.set_button_style(calculate_button)
+        calculate_button.setStyleSheet("""
+            QPushButton {
+                background-color: #0057B7;  /* Dark Blue Background */
+                color: white;               /* White Text for Contrast */
+                font-size: 18px;            /* Increased font size */
+                padding: 10px 20px;         /* Padding for better usability */
+                border-radius: 5px;
+            }
+            QPushButton:hover {
+                background-color: #003C88;  /* Darker Blue on Hover */
+            }
+        """)
         calculate_button.clicked.connect(self.calculate_bmi)
         layout.addWidget(calculate_button)
 
-        # Create a text field to show the BMI result
+        # BMI Output
         self.bmi_output = QLineEdit(self)
         self.bmi_output.setReadOnly(True)  # Make it read-only
+        self.bmi_output.setPlaceholderText("Your BMI will be displayed here")
         self.bmi_output.setStyleSheet("""
-            background-color: #f0f0f0;
-            font-size: 18px;           /* Reduced font size */
-            font-weight: bold;         /* Bold text for emphasis */
-            color: #8e24aa;            /* Matching the app theme */
-            padding: 5px;              /* Reduced padding */
-            border: 2px solid #E1BEE7; /* Light purple border */
+            background-color: #E0FFFF;  /* Very Light Blue */
+            font-size: 18px;
+            font-weight: bold;
+            color: #0057B7;            /* Dark Blue Text */
+            padding: 5px;
+            border: 2px solid #0057B7; /* Dark Blue Border */
             border-radius: 5px;
-            height: 25px;              /* Reduced height */
-            margin-top: 10px;          /* Added margin for spacing */
-            margin-bottom: 10px;       /* Reduced margin for spacing */
+            height: 30px;
+            margin-top: 10px;
+            margin-bottom: 10px;
         """)
         layout.addWidget(self.bmi_output)
 
-        # Create a larger canvas for the plot
-        self.canvas = FigureCanvas(Figure(figsize=(8, 8)))  # Larger canvas for better visibility
-        self.canvas.setStyleSheet("border: 2px solid #E1BEE7; border-radius: 10px; background-color: #f3e5f5;")
+        # Canvas for Plotting BMI Visualization
+        self.canvas = FigureCanvas(Figure(figsize=(6, 6)))  # Adjusted canvas size for better fitting
+        self.canvas.setStyleSheet("""
+            border: 2px solid #0057B7;  /* Dark Blue Border */
+            border-radius: 10px;
+            background-color: #E0FFFF; /* Very Light Blue Background */
+        """)
         layout.addWidget(self.canvas)
 
+        # Add the BMI Tab
         self.tabs.addTab(bmi_tab, "BMI")
 
     def calculate_bmi(self):
@@ -1666,31 +1708,31 @@ class LoginSignupApp(QWidget):
 
         # Create the plot
         ax = self.canvas.figure.add_subplot(111)
-        bars = ax.bar(categories, values, color=['#8e24aa', '#66bb6a', '#ffa726', '#ef5350'], edgecolor='white',
+        bars = ax.bar(categories, values, color=['#42a5f5', '#66bb6a', '#ffa726', '#ef5350'], edgecolor='white',
                       linewidth=2, alpha=0.9, zorder=3)
 
         # Highlight the user's BMI value
-        user_bmi_bar = ax.axhline(bmi_value, color='#42a5f5', linestyle='--', linewidth=2)
-        ax.text(3.5, bmi_value, f'Your BMI: {bmi_value:.2f}', color='#42a5f5', fontsize=12, ha='right', va='bottom',
+        user_bmi_bar = ax.axhline(bmi_value, color='#0057B7', linestyle='--', linewidth=2)  # Dark Blue for BMI line
+        ax.text(3.5, bmi_value, f'Your BMI: {bmi_value:.2f}', color='#0057B7', fontsize=12, ha='right', va='bottom',
                 zorder=4)
 
         # Set background and grid style
-        ax.set_facecolor('#f3e5f5')  # Light purple background for the plot
+        ax.set_facecolor('#E0FFFF')  # Very Light Blue background for the plot
         ax.grid(color='white', linestyle='--', linewidth=0.7, zorder=0)
 
         # Add labels and title with modern fonts
-        ax.set_title("BMI Categories", fontsize=20, fontweight='bold', color='#d81b60')
-        ax.set_xlabel("Categories", fontsize=16, color='#333')
-        ax.set_ylabel("BMI Values", fontsize=16, color='#333')
-        ax.tick_params(axis='x', labelsize=12, colors='#333')
-        ax.tick_params(axis='y', labelsize=12, colors='#333')
+        ax.set_title("BMI Categories", fontsize=20, fontweight='bold', color='#0057B7')  # Dark Blue title
+        ax.set_xlabel("Categories", fontsize=16, color='#0057B7')
+        ax.set_ylabel("BMI Values", fontsize=16, color='#0057B7')
+        ax.tick_params(axis='x', labelsize=12, colors='#0057B7')
+        ax.tick_params(axis='y', labelsize=12, colors='#0057B7')
 
         # Add interactive tooltips
         cursor = mplcursors.cursor(bars, hover=True)
         cursor.connect("add", lambda sel: sel.annotation.set_text(
             f'BMI Category: {categories[sel.index]}\nBMI Value: {values[sel.index]}'))
         cursor.connect("add", lambda sel: sel.annotation.set_bbox(
-            {"boxstyle": "round,pad=0.5", "fc": "#e1bee7", "ec": "#8e24aa"}))
+            {"boxstyle": "round,pad=0.5", "fc": "#E1BEE7", "ec": "#0057B7"}))  # Light Blue background for tooltips
 
         # Update canvas
         self.canvas.draw()
@@ -1704,32 +1746,35 @@ class LoginSignupApp(QWidget):
         label.setStyleSheet("""
             font-size: 30px;
             font-weight: bold;
-            color: #D81B60;  /* Soft pink for the label text */
-            background-color: #F3E5F5;  /* Very light lavender for the background */
+            color: #0057B7;  /* Dark Blue for the label text */
+            background-color: #B0E0E6;  /* Pale Blue for the background */
             padding: 10px;
+            border-radius: 5px;
         """)
         layout.addWidget(label)
 
+        # Target Calories Input
         self.calories_input = QLineEdit(self)
         self.calories_input.setPlaceholderText("Enter Target Calories")
         self.set_text_field_style(self.calories_input)
         self.calories_input.setStyleSheet(self.calories_input.styleSheet() + "margin-bottom: 15px;")
         layout.addWidget(self.calories_input)
 
-
-
+        # Generate Meal Plan Button
         generate_meal_button = QPushButton("Generate Meal Plan", self)
         self.set_button_style(generate_meal_button)
         generate_meal_button.clicked.connect(self.generate_meal_plan)
         layout.addWidget(generate_meal_button)
 
+        # Meal Plan Output
         self.meal_plan_output = QTextEdit(self)
         self.meal_plan_output.setReadOnly(True)
         self.meal_plan_output.setStyleSheet("""
-            background-color: #f9f9f9;
-            border: 1px solid #cccccc;
+            background-color: #E0FFFF;  /* Very Light Blue */
+            border: 2px solid #0057B7;  /* Dark Blue Border */
             font-size: 14px;
             line-height: 1.5;
+            color: #0057B7;  /* Dark Blue Text */
             padding: 10px;
         """)
         layout.addWidget(self.meal_plan_output)
@@ -1757,19 +1802,13 @@ class LoginSignupApp(QWidget):
         except Exception as e:
             self.meal_plan_output.setPlainText(f"An error occurred: {e}")
 
-
-
-
-
-
-
-
     def activate_voice_assistant(self):
         """Activate the voice assistant with enhanced visual and audio feedback."""
         self.voice_assistant_active = True
         self.dynamic_button.setText("Stop Recording")  # Change button label
         self.assistant_status_label.setText("🎤 Listening...")
-        self.assistant_status_label.setStyleSheet("font-size: 20px; color: green; font-weight: bold;")
+        self.assistant_status_label.setStyleSheet(
+            "font-size: 20px; color: #0057B7; font-weight: bold;")  # Dark Blue color
 
         # Start animated visual feedback
         self.start_recording_visual_feedback()
@@ -1830,7 +1869,7 @@ class LoginSignupApp(QWidget):
     def stop_recording_visual_feedback(self):
         """Stop the visual feedback for recording."""
         self.assistant_status_label.setText("🔴 Recording Stopped.")
-        self.assistant_status_label.setStyleSheet("font-size: 20px; color: gray;")
+        self.assistant_status_label.setStyleSheet("font-size: 20px; color: gray;")  # Light gray color after stop
         if hasattr(self, "mic_animation") and self.mic_animation:
             self.mic_animation.stop()
             self.mic_label.clear()
@@ -1884,8 +1923,12 @@ class LoginSignupApp(QWidget):
             return  # If actively recording, the button stays as "Deactivate"
         elif self.chat_input.text().strip():  # If chat input is not empty
             self.dynamic_button.setText("Send")
+            self.dynamic_button.setStyleSheet(
+                "background-color: #0057B7; color: white;")  # Blue background for 'Send' state
         else:  # If the chat input is empty
             self.dynamic_button.setText("Record")
+            self.dynamic_button.setStyleSheet(
+                "background-color: #42a5f5; color: white;")  # Light blue background for 'Record'
 
     def handle_dynamic_button_action(self):
         """Handle actions for the dynamic button based on its current state."""
@@ -1901,8 +1944,6 @@ class LoginSignupApp(QWidget):
         """Create the interactive assistant tab with enhanced chat and voice features."""
         assistant_tab = QWidget()
         layout = QVBoxLayout(assistant_tab)
-        # Microphone animation label
-
 
         # Tab title
         label = QLabel("AI Assistant", self)
@@ -1910,9 +1951,10 @@ class LoginSignupApp(QWidget):
         label.setStyleSheet("""
             font-size: 30px;
             font-weight: bold;
-            color: #D81B60;  /* Soft pink for the label text */
-            background-color: #F3E5F5;  /* Very light lavender for the background */
+            color: #0057B7;  /* Dark Blue for the label text */
+            background-color: #B0E0E6;  /* Pale Blue for the background */
             padding: 10px;
+            border-radius: 5px;
         """)
         layout.addWidget(label)
 
@@ -1920,12 +1962,12 @@ class LoginSignupApp(QWidget):
         self.chat_output = QTextEdit(self)
         self.chat_output.setStyleSheet("""
             QTextEdit {
-                background-color: #f9f9f9;
-                border: 1px solid #cccccc;
+                background-color: #E0FFFF;  /* Very Light Blue */
+                border: 2px solid #0057B7;  /* Dark Blue Border */
                 border-radius: 5px;
                 font-family: 'Segoe UI', Arial, sans-serif;
                 font-size: 14px;
-                color: #333333;
+                color: #0057B7;  /* Dark Blue Text */
                 padding: 8px;
                 line-height: 1.5;
             }
@@ -1942,11 +1984,12 @@ class LoginSignupApp(QWidget):
         self.chat_input.textChanged.connect(self.toggle_button_mode)
         input_layout.addWidget(self.chat_input)
 
-
+        # Microphone icon or animation (You can add here)
         self.mic_label = QLabel(self)
         self.mic_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(self.mic_label)
 
+        # Dynamic button
         self.dynamic_button = QPushButton("Record", self)
         self.set_button_style(self.dynamic_button)
         self.dynamic_button.clicked.connect(self.handle_dynamic_button_action)
@@ -1957,7 +2000,10 @@ class LoginSignupApp(QWidget):
         # Status label for assistant state
         self.assistant_status_label = QLabel("Status: Inactive", self)
         self.assistant_status_label.setAlignment(Qt.AlignCenter)
-        self.assistant_status_label.setStyleSheet("font-size: 20px; color: #cccccc;")
+        self.assistant_status_label.setStyleSheet("""
+            font-size: 20px;
+            color: #0057B7;  /* Dark Blue for status text */
+        """)
         layout.addWidget(self.assistant_status_label)
 
         # Add the tab to the QTabWidget
@@ -1992,21 +2038,20 @@ class LoginSignupApp(QWidget):
         """Format the assistant's response to ensure consistency and readability."""
         return response.strip().replace("*", "").replace("\n", " ")
 
-
-
     def create_help_tab(self):
         help_tab = QWidget()
         layout = QVBoxLayout(help_tab)
 
-        # Title
+        # Title Label
         label = QLabel("Help & FAQs", self)
         label.setAlignment(Qt.AlignCenter)
         label.setStyleSheet("""
             font-size: 30px;
             font-weight: bold;
-            color: #D81B60;  /* Soft pink for the label text */
-            background-color: #F3E5F5;  /* Very light lavender for the background */
+            color: #0057B7;  /* Dark Blue for the label text */
+            background-color: #B0E0E6;  /* Pale Blue for the background */
             padding: 10px;
+            border-radius: 5px;
         """)
         layout.addWidget(label)
 
@@ -2016,7 +2061,7 @@ class LoginSignupApp(QWidget):
         faq_header.setStyleSheet("""
             font-size: 24px;
             font-weight: bold;
-            color: white;
+            color: #0057B7;  /* Dark Blue for FAQ header */
             margin-bottom: 20px;
         """)
         layout.addWidget(faq_header)
@@ -2026,7 +2071,7 @@ class LoginSignupApp(QWidget):
             ("How do I reset my password?", "Click on 'Forgot Password?' on the login screen."),
             ("How can I contact support?", "Please use the contact form on our website."),
             ("What features does this app offer?",
-             "The app provides posture tracking,meal planning,fitness tracking and workout planning ."),
+             "The app provides posture tracking, meal planning, fitness tracking, and workout planning."),
             ("Is my data secure?", "Yes, we use encryption to protect your data."),
             ("Can I sync my progress with other devices?", "Yes, you can sync your data across multiple devices.")
         ]
@@ -2034,15 +2079,22 @@ class LoginSignupApp(QWidget):
         for question, answer in faqs:
             question_label = QPushButton(question, self)
             self.set_button_style(question_label)
+            question_label.setStyleSheet("""
+                background-color: #0057B7;  /* Dark Blue for question button */
+                color: white;               /* White text for contrast */
+                font-size: 16px;
+                padding: 10px;
+                border-radius: 5px;
+            """)
 
             answer_label = QLabel(answer, self)
             answer_label.setWordWrap(True)
             answer_label.setStyleSheet("""
-                font-size: 16px; 
-                color: #cccccc; 
-                padding: 10px; a
-                background-color: #f0f0f0; 
-                border: 1px solid #cccccc; 
+                font-size: 16px;
+                color: #0057B7;             /* Dark Blue for the answer text */
+                padding: 10px;
+                background-color: #E0FFFF; /* Very Light Blue */
+                border: 1px solid #0057B7; /* Dark Blue Border */
                 border-radius: 5px;
                 margin-left: 20px;  /* Indent the answer */
             """)
@@ -2053,21 +2105,21 @@ class LoginSignupApp(QWidget):
                 answer_label.setVisible(not answer_label.isVisible())
                 if answer_label.isVisible():
                     answer_label.setStyleSheet("""
-                        font-size: 16px; 
-                        color: black; 
-                        padding: 10px; 
-                        background-color: #e0e0e0;  /* Slightly darker when visible */
-                        border: 1px solid #aaaaaa; 
+                        font-size: 16px;
+                        color: #0057B7;  /* Dark Blue text for visible answers */
+                        padding: 10px;
+                        background-color: #D0EFFF;  /* Slightly darker blue when visible */
+                        border: 1px solid #0057B7; 
                         border-radius: 5px;
                         margin-left: 20px; 
                     """)
                 else:
                     answer_label.setStyleSheet("""
-                        font-size: 16px; 
-                        color: #cccccc; 
-                        padding: 10px; 
-                        background-color: #f0f0f0; 
-                        border: 1px solid #cccccc; 
+                        font-size: 16px;
+                        color: #0057B7;  /* Dark Blue text for collapsed answers */
+                        padding: 10px;
+                        background-color: #E0FFFF;
+                        border: 1px solid #0057B7; /* Dark Blue Border */
                         border-radius: 5px;
                         margin-left: 20px; 
                     """)
@@ -2081,81 +2133,105 @@ class LoginSignupApp(QWidget):
         feedback_label.setAlignment(Qt.AlignCenter)
         feedback_label.setStyleSheet("""
             font-size: 18px;
-            color: #ffffff;
+            color: #0057B7;  /* Dark Blue for feedback text */
             margin-top: 30px;
         """)
         layout.addWidget(feedback_label)
 
+        # Contact Support Button
         contact_button = QPushButton("Contact Support", self)
         self.set_button_style(contact_button)
+        contact_button.setStyleSheet("""
+            background-color: #0057B7;  /* Dark Blue for button background */
+            color: white;               /* White text for contrast */
+            font-size: 18px;
+            padding: 12px;
+            border-radius: 5px;
+        """)
         contact_button.clicked.connect(
             self.open_contact_form)  # Connect to a method that opens a contact form or support page
         layout.addWidget(contact_button)
 
+        # Add the tab to the QTabWidget
         self.tabs.addTab(help_tab, "Help")
-
 
     def open_contact_form(self):
         """Open the contact form for user inquiries."""
-        # This method should create and display a contact form dialog
+        # Create and display a contact form dialog
         contact_dialog = QDialog(self)
         contact_dialog.setWindowTitle("Contact Support")
         contact_dialog.setFixedSize(400, 400)
 
         layout = QVBoxLayout(contact_dialog)
 
+        # Title label
         label = QLabel("Contact Support", contact_dialog)
         label.setAlignment(Qt.AlignCenter)
         label.setStyleSheet("""
             font-size: 20px;
             font-weight: bold;
-            color: #8e24aa;  /* Matching the app theme */
+            color: #0057B7;  /* Dark Blue for the label text */
             margin-bottom: 10px;
         """)
         layout.addWidget(label)
 
+        # Name input field
         name_input = QLineEdit(contact_dialog)
         name_input.setPlaceholderText("Name")
         name_input.setStyleSheet("""
             font-size: 16px;
             padding: 8px;
-            border: 1px solid #ccc;
+            border: 1px solid #0057B7;  /* Dark Blue border */
             border-radius: 5px;
             margin-bottom: 10px;
+            background-color: #E0FFFF;  /* Very Light Blue background */
         """)
         layout.addWidget(name_input)
 
+        # Email input field
         email_input = QLineEdit(contact_dialog)
         email_input.setPlaceholderText("Email")
         email_input.setStyleSheet("""
             font-size: 16px;
             padding: 8px;
-            border: 1px solid #ccc;
+            border: 1px solid #0057B7;  /* Dark Blue border */
             border-radius: 5px;
             margin-bottom: 10px;
+            background-color: #E0FFFF;  /* Very Light Blue background */
         """)
         layout.addWidget(email_input)
 
+        # Message input field
         message_input = QTextEdit(contact_dialog)
         message_input.setPlaceholderText("Message")
         message_input.setStyleSheet("""
             font-size: 16px;
             padding: 8px;
-            border: 1px solid #ccc;
+            border: 1px solid #0057B7;  /* Dark Blue border */
             border-radius: 5px;
             margin-bottom: 10px;
+            background-color: #E0FFFF;  /* Very Light Blue background */
         """)
         layout.addWidget(message_input)
 
+        # Submit button
         submit_button = QPushButton("Submit", contact_dialog)
         self.set_button_style(submit_button)
+        submit_button.setStyleSheet("""
+            background-color: #0057B7;  /* Dark Blue background */
+            color: white;               /* White text for contrast */
+            font-size: 16px;
+            padding: 12px;
+            border-radius: 5px;
+        """)
         layout.addWidget(submit_button)
 
+        # Success label for feedback
         success_label = QLabel("", contact_dialog)
         success_label.setAlignment(Qt.AlignCenter)
         success_label.setStyleSheet("""
             font-size: 16px;
-            color: #42a5f5;  /* Light blue color for success message */
+            color: #42a5f5;  /* Light Blue color for success message */
             margin-top: 10px;
             font-weight: bold;
         """)
@@ -2177,20 +2253,23 @@ class LoginSignupApp(QWidget):
                 """)
                 return
 
-            '''# Show a confirmation message within the dialog
+            # Confirmation message after submission
             success_label.setText("Message sent! We'll get back to you shortly.")
             success_label.setStyleSheet("""
                 font-size: 16px;
-                color: purple;  /* Light blue color for success message */
+                color: #42a5f5;  /* Light Blue for success message */
                 margin-top: 10px;
                 font-weight: bold;
-            """)'''
+            """)
+
+            # Clear input fields after submission
             name_input.clear()
             email_input.clear()
             message_input.clear()
 
         submit_button.clicked.connect(submit_contact_form)
 
+        # Execute the dialog
         contact_dialog.exec_()
 
     def show_message(self, message):
