@@ -903,8 +903,8 @@ class LoginSignupApp(QWidget):
             QWidget {
                 background-color: #E0FFFF;  /* Very Light Blue */
                 border-radius: 10px;
-                padding: 10px;
-                margin-bottom: 15px;  /* Spacing between boxes */
+                padding: 1px;
+                margin-bottom: 0px;  /* Spacing between boxes */
             }
         """)
         self.signup_name = self.create_labeled_input(user_name_layout, "User Name:", "Enter your name", "profile_6915911.png")
@@ -918,8 +918,8 @@ class LoginSignupApp(QWidget):
             QWidget {
                 background-color: #E0FFFF;  /* Very Light Blue */
                 border-radius: 10px;
-                padding: 10px;
-                margin-bottom: 15px;  /* Spacing between boxes */
+                padding: 1px;
+                margin-bottom: 0px;  /* Spacing between boxes */
             }
         """)
         self.signup_email = self.create_labeled_input(user_email_layout, "User Email:", "Enter your email", "email_552486.png")
@@ -933,8 +933,8 @@ class LoginSignupApp(QWidget):
             QWidget {
                 background-color: #E0FFFF;  /* Very Light Blue */
                 border-radius: 10px;
-                padding: 10px;
-                margin-bottom: 15px;  /* Spacing between boxes */
+                padding: 1px;
+                margin-bottom: 0px;  /* Spacing between boxes */
             }
         """)
         self.signup_password = self.create_labeled_input(password_layout, "Password:", "Enter your password",
@@ -959,7 +959,7 @@ class LoginSignupApp(QWidget):
 
         # Feedback label
         self.signup_feedback = QLabel("", self)
-        self.signup_feedback.setStyleSheet("font-size: 20px; color: #FF0000; margin-top: 15px;")  # Red for feedback
+        self.signup_feedback.setStyleSheet("font-size: 20px; color:#0057B7; margin-top: 15px;")  # Red for feedback
         self.signup_feedback.setAlignment(Qt.AlignCenter)
         box_layout.addWidget(self.signup_feedback)
 
@@ -1003,7 +1003,7 @@ class LoginSignupApp(QWidget):
         input_field.setStyleSheet("""
             QLineEdit {
                 font-size: 18px;
-                padding-left: 40px;
+                padding-left: 2px;
             }
             QLineEdit::placeholder {
                 font-size: 18px;
