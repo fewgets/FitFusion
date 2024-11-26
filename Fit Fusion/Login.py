@@ -1212,7 +1212,7 @@ class LoginSignupApp(QWidget):
         label = QLabel("Workout Planner", self)
         label.setAlignment(Qt.AlignCenter)
         label.setStyleSheet("""
-            font-size: 30px;
+            font-size: 20px;
             font-weight: bold;
             color: #0057B7;  /* Dark Blue for the label text */
             background-color: #B0E0E6;  /* Pale Blue for the background */
@@ -1223,7 +1223,15 @@ class LoginSignupApp(QWidget):
 
         # Muscle Group Label
         muscle_group_label = QLabel("Muscle Group:", self)
-        muscle_group_label.setStyleSheet("font-size: 16px; color: #0057B7;")
+        muscle_group_label.setStyleSheet("""
+            font-size: 16px;
+            font-weight: bold;
+            color: #0057B7;  /* Dark Blue text */
+            background-color: white;  /* Light Blue background */
+            padding: 5px;
+            border-radius: 5px;
+        """)
+        muscle_group_label.setFixedWidth(muscle_group_label.sizeHint().width())  # Adjust width to text
         layout.addWidget(muscle_group_label)
 
         # Muscle Group ComboBox
@@ -1245,25 +1253,41 @@ class LoginSignupApp(QWidget):
 
         # Exercise Name Label
         exercise_name_label = QLabel("Exercise Name:", self)
-        exercise_name_label.setStyleSheet("font-size: 16px; color: #0057B7;")
+        exercise_name_label.setStyleSheet("""
+            font-size: 16px;
+            font-weight: bold;
+            color: #0057B7;
+            background-color: white;  /* Light Blue background */
+            padding: 5px;
+            border-radius: 5px;
+        """)
+        exercise_name_label.setFixedWidth(exercise_name_label.sizeHint().width())  # Adjust width to text
         layout.addWidget(exercise_name_label)
 
         # Exercise Name Input
         self.exercise_name_input = QLineEdit(self)
         self.exercise_name_input.setPlaceholderText("Partial Exercise Name (e.g., press, squat)")
         self.exercise_name_input.setStyleSheet("""
-            background-color: #E0FFFF;  /* Very Light Blue */
+            background-color: #E0FFFF;
             font-size: 16px;
             padding: 5px;
-            border: 2px solid #0057B7;  /* Dark Blue Border */
+            border: 2px solid #0057B7;
             border-radius: 5px;
-            color: #0057B7;             /* Dark Blue Text */
+            color: #0057B7;
         """)
         layout.addWidget(self.exercise_name_input)
 
         # Exercise Type Label
         exercise_type_label = QLabel("Exercise Type:", self)
-        exercise_type_label.setStyleSheet("font-size: 16px; color: #0057B7;")
+        exercise_type_label.setStyleSheet("""
+            font-size: 16px;
+            font-weight: bold;
+            color: #0057B7;
+            background-color: white;  /* Light Blue background */
+            padding: 5px;
+            border-radius: 5px;
+        """)
+        exercise_type_label.setFixedWidth(exercise_type_label.sizeHint().width())  # Adjust width to text
         layout.addWidget(exercise_type_label)
 
         # Exercise Type ComboBox
@@ -1273,48 +1297,64 @@ class LoginSignupApp(QWidget):
             "Strength", "Stretching", "Strongman"
         ])
         self.exercise_type_combo.setStyleSheet("""
-            background-color: #E0FFFF;  /* Very Light Blue */
+            background-color: #E0FFFF;
             font-size: 16px;
             padding: 5px;
-            border: 2px solid #0057B7;  /* Dark Blue Border */
+            border: 2px solid #0057B7;
             border-radius: 5px;
-            color: #0057B7;             /* Dark Blue Text */
+            color: #0057B7;
         """)
         layout.addWidget(self.exercise_type_combo)
 
         # Difficulty Label
         difficulty_label = QLabel("Difficulty Level:", self)
-        difficulty_label.setStyleSheet("font-size: 16px; color: #0057B7;")
+        difficulty_label.setStyleSheet("""
+            font-size: 16px;
+            font-weight: bold;
+            color: #0057B7;
+            background-color: white;
+            padding: 5px;
+            border-radius: 5px;
+        """)
+        difficulty_label.setFixedWidth(difficulty_label.sizeHint().width())  # Adjust width to text
         layout.addWidget(difficulty_label)
 
         # Difficulty ComboBox
         self.difficulty_combo = QComboBox(self)
         self.difficulty_combo.addItems(["", "Beginner", "Intermediate", "Expert"])
         self.difficulty_combo.setStyleSheet("""
-            background-color: #E0FFFF;  /* Very Light Blue */
+            background-color: #E0FFFF;
             font-size: 16px;
             padding: 5px;
-            border: 2px solid #0057B7;  /* Dark Blue Border */
+            border: 2px solid #0057B7;
             border-radius: 5px;
-            color: #0057B7;             /* Dark Blue Text */
+            color: #0057B7;
         """)
         layout.addWidget(self.difficulty_combo)
 
         # Duration Label
         duration_label = QLabel("Workout Duration (minutes):", self)
-        duration_label.setStyleSheet("font-size: 16px; color: #0057B7;")
+        duration_label.setStyleSheet("""
+            font-size: 16px;
+            font-weight: bold;
+            color: #0057B7;
+            background-color: white;
+            padding: 5px;
+            border-radius: 5px;
+        """)
+        duration_label.setFixedWidth(duration_label.sizeHint().width())  # Adjust width to text
         layout.addWidget(duration_label)
 
         # Duration Input
         self.workout_duration_input = QLineEdit(self)
         self.workout_duration_input.setPlaceholderText("Workout Duration (minutes, e.g., 45)")
         self.workout_duration_input.setStyleSheet("""
-            background-color: #E0FFFF;  /* Very Light Blue */
+            background-color: #E0FFFF;
             font-size: 16px;
             padding: 5px;
-            border: 2px solid #0057B7;  /* Dark Blue Border */
+            border: 2px solid #0057B7;
             border-radius: 5px;
-            color: #0057B7;             /* Dark Blue Text */
+            color: #0057B7;
         """)
         layout.addWidget(self.workout_duration_input)
 
@@ -1322,15 +1362,14 @@ class LoginSignupApp(QWidget):
         generate_button = QPushButton("Generate Workout Plan", self)
         generate_button.setStyleSheet("""
             QPushButton {
-                background-color: #0057B7;  /* Dark Blue Background */
-                color: white;               /* White Text for Contrast */
-                font-size: 18px;            /* Increased Font Size */
-                padding: 10px 20px;         /* Padding for Better Visibility */
-                border-radius: 5px;         /* Rounded Corners */
-                cursor: pointer;            /* Change Cursor to Pointer */
+                background-color: #0057B7;
+                color: white;
+                font-size: 18px;
+                padding: 10px 20px;
+                border-radius: 5px;
             }
             QPushButton:hover {
-                background-color: #003C88;  /* Darker Blue on Hover */
+                background-color: #003C88;
             }
         """)
         generate_button.clicked.connect(self.generate_workout_plan)
@@ -1340,12 +1379,12 @@ class LoginSignupApp(QWidget):
         self.workout_plan_output = QTextEdit(self)
         self.workout_plan_output.setReadOnly(True)
         self.workout_plan_output.setStyleSheet("""
-            background-color: #E0FFFF;  /* Very Light Blue */
+            background-color: #E0FFFF;
             font-size: 16px;
             padding: 10px;
-            border: 2px solid #0057B7;  /* Dark Blue Border */
+            border: 2px solid #0057B7;
             border-radius: 5px;
-            color: #0057B7;             /* Dark Blue Text */
+            color: #0057B7;
         """)
         layout.addWidget(self.workout_plan_output)
 
@@ -1403,8 +1442,12 @@ class LoginSignupApp(QWidget):
         current_status_label.setAlignment(Qt.AlignCenter)
         current_status_label.setStyleSheet("""
             font-size: 20px;
-            color: #0057B7;  /* Dark Blue */
-            margin-bottom: 20px;
+            color: #0057B7;  /* Dark Blue text */
+            background-color: #E0FFFF;  /* Very Light Blue background */
+            padding: 10px;  /* Add padding inside the box */
+            margin-bottom: 20px;  /* Space below the label */
+            border: 2px solid #0057B7;  /* Dark Blue border */
+            border-radius: 5px;  /* Rounded corners */
         """)
         layout.addWidget(current_status_label)
 
@@ -1464,11 +1507,21 @@ class LoginSignupApp(QWidget):
             font-size: 16px;
             color: #0057B7;  /* Dark Blue */
             margin-top: 10px;
+            padding: 20px;  /* Increase padding inside the box */
+            border: 3px solid #0057B7;  /* Dark Blue border */
+            background-color: #E0FFFF;  /* Very Light Blue background */
+            border-radius: 10px;  /* Rounded corners for a smoother look */
         """)
         layout.addWidget(self.streak_progress_label)
 
         # Add the streak tab to the main tab widget
         self.tabs.addTab(streak_tab, "Streak")
+
+        # Center the layout contents
+        layout.setAlignment(Qt.AlignCenter)
+
+        # Set the layout of the container (streak_tab or parent widget)
+        streak_tab.setLayout(layout)
 
         # Ensure the tab switch signal is connected only once
         if not hasattr(self, '_streak_signal_connected'):
@@ -1506,14 +1559,36 @@ class LoginSignupApp(QWidget):
                 "SELECT last_active_date, streak_count, current_streak, longest_streak FROM streaks WHERE user_id = ?",
                 (user_id,))
             result = cur.fetchone()
-
             if result:
                 _, streak_count, current_streak, longest_streak = result
-                self.streak_progress_label.setText(
-                    f"Total Streak: {streak_count} days\n"
-                    f"Current Streak: {current_streak} days\n"
-                    f"Longest Streak: {longest_streak} days"
-                )
+                streak_text = f"Total Streak: {streak_count} days\n" \
+                              f"Current Streak: {current_streak} days\n" \
+                              f"Longest Streak: {longest_streak} days"
+
+                # Set the text in the label
+                self.streak_progress_label.setText(streak_text)
+
+                # Adjust width to the text and ensure it fits dynamically
+                self.streak_progress_label.setFixedWidth(self.streak_progress_label.sizeHint().width())
+
+                # Apply the box around the streak data with styles to make it bigger
+                self.streak_progress_label.setStyleSheet("""
+                            font-size: 18px;  /* Larger font size for better visibility */
+                            color: #0057B7;  /* Dark Blue text */
+                            background-color: #E0FFFF;  /* Very Light Blue background */
+                            padding: 20px;  /* Increase padding inside the box for a larger box */
+                            border: 3px solid #0057B7;  /* Dark Blue border with slightly thicker border */
+                            border-radius: 10px;  /* More rounded corners for a smoother look */
+                            text-align: center;  /* Center the text within the box */
+                            margin: 0 auto;  /* Center the label horizontally within its container */
+                            min-width: 300px;  /* Set a minimum width to make the box wider */
+                        """)
+
+                # Center the box in the middle of the screen using layout
+                layout = QVBoxLayout()  # Create a new layout or use the existing one
+                layout.setAlignment(Qt.AlignCenter)  # Center the layout contents
+
+
             else:
                 # Handle first-time login for a user
                 cur.execute("""
@@ -1601,7 +1676,9 @@ class LoginSignupApp(QWidget):
             font-size: 16px;
             padding: 5px;
             height: 30px;              /* Adjusted height for consistency */
+                 color: #0057B7;            /* Dark Blue Text */
             border: 2px solid #0057B7; /* Dark Blue Border */
+            background-color: #E0FFFF;  /* Very Light Blue */
             border-radius: 5px;
             margin-bottom: 10px;
         """)
@@ -1614,7 +1691,9 @@ class LoginSignupApp(QWidget):
             font-size: 16px;
             padding: 5px;
             height: 30px;              /* Adjusted height for consistency */
+                 color: #0057B7;            /* Dark Blue Text */
             border: 2px solid #0057B7; /* Dark Blue Border */
+            background-color: #E0FFFF;  /* Very Light Blue */
             border-radius: 5px;
             margin-bottom: 10px;
         """)
@@ -1624,10 +1703,12 @@ class LoginSignupApp(QWidget):
         self.age_input = QLineEdit(self)
         self.age_input.setPlaceholderText("Age")
         self.age_input.setStyleSheet("""
+             color: #0057B7;            /* Dark Blue Text */
+            border: 2px solid #0057B7; /* Dark Blue Border */
+            background-color: #E0FFFF;  /* Very Light Blue */
             font-size: 16px;
             padding: 5px;
             height: 30px;              /* Adjusted height for consistency */
-            border: 2px solid #0057B7; /* Dark Blue Border */
             border-radius: 5px;
             margin-bottom: 10px;
         """)
