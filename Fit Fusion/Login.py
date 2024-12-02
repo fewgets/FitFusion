@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QLineEdi
     QTabWidget, QSizePolicy, QHBoxLayout, QMessageBox, QTextEdit, QSlider, QComboBox, QDialog, QProgressBar, \
     QScrollArea, QGridLayout, QAction
 from PyQt5.QtCore import Qt, QTimer, QSize
-from PyQt5.QtGui import QPixmap, QBrush, QPalette, QIcon
+from PyQt5.QtGui import QPixmap, QBrush, QPalette, QIcon, QImage
 import speech_recognition as sr  # Added for voice recognition
 import threading
 # Backend
@@ -26,8 +26,11 @@ from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 import mplcursors
 
+import cv2
+import mediapipe as mp
+import numpy as np
 
-
+from PoseTracker import *
 class BMI:
     def __init__(self):
         self.weight_kg = 0.0
@@ -285,7 +288,7 @@ class LoginSignupApp(QWidget):
             }}
         """)
 
-    def set_background_image(self, image_path):
+    '''def set_background_image(self, image_path):
         self.central_widget.setStyleSheet(f"""
             QStackedWidget {{
                 border-image: url({image_path}) 0 0 0 0 stretch stretch;
@@ -296,43 +299,45 @@ class LoginSignupApp(QWidget):
                 50% {{ background-position: 100% 50%; }}
                 100% {{ background-position: 0% 50%; }}
             }}
-        """)
+        """)'''
 
     def set_back_button_style(self, button):
-            button.setStyleSheet("""
-                QPushButton {
-                    background-color: #B0E0E6;  /* Pale Blue */
-                    color: #0057B7;             /* Dark Blue */
-                    font-size: 18px;
-                    padding: 10px 20px;
-                    border: 1px solid #0057B7;  /* Dark Blue Border */
-                    border-radius: 4px;
-                    cursor: pointer;
-                    transition: all 0.3s ease;
-                }
-                QPushButton:hover {
-                    background-color: #E0FFFF;  /* Very Light Blue */
-                    transform: scale(1.05);
-                }
-            """)
+        button.setStyleSheet("""
+            QPushButton {
+                background-color: #B0E0E6;  /* Pale Blue */
+                color: #0057B7;             /* Dark Blue */
+                font-size: 14px;            /* Reduced font size */
+                padding: 5px 10px;          /* Reduced padding on x-axis */
+                width: 100px;               /* Fixed width */
+                border: 1px solid #0057B7;  /* Dark Blue Border */
+                border-radius: 4px;         /* Subtle rounded corners */
+                cursor: pointer;
+                transition: all 0.3s ease;
+            }
+            QPushButton:hover {
+                background-color: #E0FFFF;  /* Very Light Blue */
+                transform: scale(1.05);
+            }
+        """)
 
     def set_forward_button_style(self, button):
-            button.setStyleSheet("""
-                QPushButton {
-                    background-color: #B0E0E6;  /* Pale Blue */
-                    color: #0057B7;             /* Dark Blue */
-                    font-size: 18px;
-                    padding: 10px 20px;
-                    border: 1px solid #0057B7;  /* Dark Blue Border */
-                    border-radius: 4px;
-                    cursor: pointer;
-                    transition: all 0.3s ease;
-                }
-                QPushButton:hover {
-                    background-color: #E0FFFF;  /* Very Light Blue */
-                    transform: scale(1.05);
-                }
-            """)
+        button.setStyleSheet("""
+            QPushButton {
+                background-color: #B0E0E6;  /* Pale Blue */
+                color: #0057B7;             /* Dark Blue */
+                font-size: 14px;            /* Reduced font size */
+                padding: 5px 10px;          /* Reduced padding on x-axis */
+                width: 100px;               /* Fixed width */
+                border: 1px solid #0057B7;  /* Dark Blue Border */
+                border-radius: 4px;         /* Subtle rounded corners */
+                cursor: pointer;
+                transition: all 0.3s ease;
+            }
+            QPushButton:hover {
+                background-color: #E0FFFF;  /* Very Light Blue */
+                transform: scale(1.05);
+            }
+        """)
 
     def add_to_history(self, index):
         """Add the current index to the history."""
@@ -360,7 +365,7 @@ class LoginSignupApp(QWidget):
         main_layout = QVBoxLayout(main_widget)
 
         # Set background image
-        self.set_background_image("full-shot-couple-doing-workout-exercises.jpg")
+        self.set_background_image("background_image_blue.png")
 
         # HEADER SECTION
         self.create_header(main_layout)
@@ -432,7 +437,7 @@ class LoginSignupApp(QWidget):
             QWidget {
                 background-color: white;  
                 border-radius: 15px;
-                padding: 10px;
+                padding: 0px;
                 box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             }
         """)
@@ -481,7 +486,7 @@ class LoginSignupApp(QWidget):
             QWidget {
                 background-color: #E0FFFF; 
                 border-radius: 15px;
-                padding: 20px;
+                padding: 5px;
                 box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
                 margin-top: 10px;
             }
@@ -1191,6 +1196,7 @@ class LoginSignupApp(QWidget):
 
         # Create tabs
         self.create_workout_planner_tab()
+        self.create_pose_tracker_tab()
         self.create_streak_tab()
         self.create_bmi_visualization_tab()
         self.create_meal_planner_tab()
@@ -1203,6 +1209,164 @@ class LoginSignupApp(QWidget):
 
         # Use stretch to ensure resizing affects tab size properly
         tabs_layout.setStretch(0, 1)  # Allow the tab widget to stretch
+
+    def create_pose_tracker_tab(self):
+        pose_tab = QWidget()
+        layout = QVBoxLayout(pose_tab)
+
+        # Title
+        label = QLabel("Pose Tracker", self)
+        label.setAlignment(Qt.AlignCenter)
+        label.setStyleSheet("""
+            font-size: 20px;
+            font-weight: bold;
+            color: #0057B7;  /* Dark Blue for the label text */
+            background-color: #B0E0E6;  /* Pale Blue for the background */
+            padding: 10px;
+            border-radius: 5px;
+        """)
+        layout.addWidget(label)
+
+        # Instructions
+        instructions_label = QLabel("Choose an exercise to track:", self)
+        instructions_label.setStyleSheet("""
+            font-size: 20px;
+            font-weight: bold;
+            color: #0057B7;  /* Dark Blue for the label text */
+            background-color: #B0E0E6;  /* Pale Blue for the background */
+            padding: 10px;
+            border-radius: 5px;
+        """)
+        instructions_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(instructions_label)
+
+        # Exercise Selection Label
+        exercise_selection_label = QLabel("Select Exercise:", self)
+        exercise_selection_label.setStyleSheet("""
+            font-size: 16px;
+            font-weight: bold;
+            color: #0057B7;  /* Dark Blue text */
+            background-color: white;  /* Light Blue background */
+            padding: 5px;
+            border-radius: 5px;
+        """)
+        exercise_selection_label.setFixedWidth(exercise_selection_label.sizeHint().width())  # Adjust width to text
+        layout.addWidget(exercise_selection_label)
+
+        # Exercise Selection ComboBox
+        self.exercise_combo = QComboBox(self)
+        self.exercise_combo.addItems(["Biceps Curl", "Squat", "Push Up", "Plank"])
+        self.exercise_combo.setStyleSheet("""
+            background-color: #E0FFFF;  /* Very Light Blue */
+            font-size: 16px;
+            padding: 5px;
+            border: 2px solid #0057B7;  /* Dark Blue Border */
+            border-radius: 5px;
+            color: #0057B7;  /* Dark Blue Text */
+        """)
+        layout.addWidget(self.exercise_combo)
+
+        # Start Tracking Button
+        start_button = QPushButton("Start Tracking", self)
+        start_button.setStyleSheet("""
+            QPushButton {
+                background-color: #0057B7;
+                color: white;
+                font-size: 18px;
+                padding: 10px 20px;
+                border-radius: 5px;
+            }
+            QPushButton:hover {
+                background-color: #003C88;
+            }
+        """)
+        start_button.clicked.connect(self.start_pose_tracking)
+        layout.addWidget(start_button)
+
+        # Feedback Area Label
+        feedback_label = QLabel("Feedback:", self)
+        feedback_label.setStyleSheet("""
+            font-size: 16px;
+            font-weight: bold;
+            color: #0057B7;  /* Dark Blue text */
+            background-color: white;  /* Light Blue background */
+            padding: 5px;
+            border-radius: 5px;
+        """)
+        feedback_label.setFixedWidth(feedback_label.sizeHint().width())  # Adjust width to text
+        layout.addWidget(feedback_label)
+
+        # Feedback Area
+        self.pose_feedback = QTextEdit(self)
+        self.pose_feedback.setReadOnly(True)
+        self.pose_feedback.setStyleSheet("""
+            background-color: #E0FFFF;
+            font-size: 16px;
+            padding: 10px;
+            border: 2px solid #0057B7;
+            border-radius: 5px;
+            color: #0057B7;
+        """)
+        layout.addWidget(self.pose_feedback)
+
+        # Video Feed Label
+     #   self.video_feed_label = QLabel(self)
+      #  self.video_feed_label.setFixedSize(640, 480)  # Set size for the video feed
+       # layout.addWidget(self.video_feed_label)
+
+        # Add tab
+        self.tabs.addTab(pose_tab, "Pose Tracker")
+
+    def start_pose_tracking(self):
+        selected_exercise = self.exercise_combo.currentText()
+        self.pose_feedback.append(f"Starting {selected_exercise} analysis...")
+
+        # Start the pose tracking in a separate thread
+        self.pose_thread = threading.Thread(target=self.run_pose_tracker, args=(selected_exercise,))
+        self.pose_thread.start()
+
+    def run_pose_tracker(self, exercise):
+        # Initialize the posture analyzer
+        posture_analyzer = PostureAnalyzer()
+
+        # Start the video capture
+        posture_analyzer.cap = cv2.VideoCapture(0)
+
+        while True:
+            ret, frame = posture_analyzer.cap.read()
+            if not ret:
+                break
+
+            # Process the frame with the posture analyzer
+            # Here you can call the specific analysis method based on the selected exercise
+            if exercise == "Biceps Curl":
+                posture_analyzer.analyze_biceps_curl()
+            elif exercise == "Squat":
+                posture_analyzer.analyze_squat()
+            elif exercise == "Push Up":
+                posture_analyzer.analyze_pushups()
+            elif exercise == "Plank":
+                posture_analyzer.analyze_plank()
+
+            '''# Convert the frame to RGB format for displaying in QLabel
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            h, w, ch = frame.shape
+            bytes_per_line = ch * w
+            q_img = QImage(frame.data, w, h, bytes_per_line, QImage.Format_RGB888)
+
+            # Update the QLabel with the new frame
+            self.video_feed_label.setPixmap(QPixmap.fromImage(q_img))
+            '''
+            # Allow the GUI to process events
+            QApplication.processEvents()
+
+        posture_analyzer.cap.release()
+
+
+
+
+
+
 
     def create_workout_planner_tab(self):
         workout_tab = QWidget()
@@ -2365,7 +2529,7 @@ class LoginSignupApp(QWidget):
         self.add_to_history(0)  # Add main UI to history
 
 
-'''def set_background_image(self, image_path=None):
+    def set_background_image(self, image_path=None):
         """Set a gradient or image background."""
         if image_path:
             pixmap = QPixmap(image_path)
@@ -2382,7 +2546,7 @@ class LoginSignupApp(QWidget):
                 }
             """)
 
-'''
+
 
 
 
