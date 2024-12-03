@@ -228,6 +228,7 @@ class LoginSignupApp(QWidget):
         self.init_forgot_password_ui()
         self.init_welcome_ui()
 
+
         self.central_widget.setCurrentIndex(0)  # Start with the main UI
         self.add_to_history(0)  # Add main UI to history
 
@@ -1125,24 +1126,19 @@ class LoginSignupApp(QWidget):
         finally:
             conn.close()
 
+
     def init_welcome_ui(self):
         """Show a welcome frame after successful login"""
         welcome_widget = QWidget()
         layout = QVBoxLayout(welcome_widget)
 
-        # Welcome message with custom style
+        # Welcome message
         self.welcome_msg = QLabel("", self)
         self.welcome_msg.setStyleSheet("font-size: 40px; font-weight: bold; color: #333333;")
-        self.welcome_msg.setAlignment(Qt.AlignCenter)  # Centering the label
+        self.welcome_msg.setAlignment(Qt.AlignCenter)
         layout.addWidget(self.welcome_msg)
 
-        # Logout button with modern style
-        btn_logout = QPushButton("Logout", self)
-        self.set_button_style(btn_logout)
-        btn_logout.setStyleSheet(btn_logout.styleSheet() + "font-size: 25px; margin-top: 20px;")
-        btn_logout.clicked.connect(self.logout)
-        layout.addWidget(btn_logout)
-
+        # No Logout button here
         self.central_widget.addWidget(welcome_widget)
 
     def show_welcome_frame(self, user_name):
@@ -1152,7 +1148,7 @@ class LoginSignupApp(QWidget):
         self.add_to_history(5)  # Add tabs UI to history
 
     def init_tabs(self, user_name):
-        """Initialize the tabbed interface after login"""
+        """Initialize the tabbed interface after login with Logout as the last tab"""
         tabs_widget = QWidget()
         tabs_layout = QVBoxLayout(tabs_widget)
 
@@ -1189,12 +1185,7 @@ class LoginSignupApp(QWidget):
             }
         """)
 
-        # Allow tabs to expand with window size
-        self.tabs.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        # Add the QTabWidget to the layout
-        tabs_layout.addWidget(self.tabs)
-
-        # Create tabs
+        # Create individual tabs
         self.create_workout_planner_tab()
         self.create_pose_tracker_tab()
         self.create_streak_tab()
@@ -1203,12 +1194,39 @@ class LoginSignupApp(QWidget):
         self.create_interactive_assistant_tab()
         self.create_help_tab()
 
+        # Add the Logout button as a tab
+        logout_tab = QWidget()
+        logout_layout = QVBoxLayout(logout_tab)
+
+        # Create Logout button
+        btn_logout = QPushButton("Logout", self)
+        btn_logout.setStyleSheet("""
+            QPushButton {
+                background-color: #0057B7;
+                color: white;
+                font-size: 16px;
+                padding: 10px 15px;
+                border-radius: 5px;
+            }
+            QPushButton:hover {
+                background-color: #003C88;
+            }
+        """)
+        btn_logout.clicked.connect(self.logout)
+
+        # Add Logout button to the tab layout
+        logout_layout.addWidget(btn_logout)
+        logout_layout.addStretch()  # Add stretch to center the button in the tab
+
+        # Add the Logout tab
+        self.tabs.addTab(logout_tab, "Logout")
+
+        # Add the QTabWidget to the layout
+        tabs_layout.addWidget(self.tabs)
+
         # Set the tabs widget as the central widget
         self.central_widget.addWidget(tabs_widget)
         self.central_widget.setCurrentWidget(tabs_widget)  # Show the tabs widget
-
-        # Use stretch to ensure resizing affects tab size properly
-        tabs_layout.setStretch(0, 1)  # Allow the tab widget to stretch
 
     def create_pose_tracker_tab(self):
         pose_tab = QWidget()
@@ -2523,10 +2541,6 @@ class LoginSignupApp(QWidget):
         msg_box.setText(message)
         msg_box.exec_()
 
-    def logout(self):
-        """Logout function - Close the welcome window and return to the main window"""
-        self.central_widget.setCurrentIndex(0)  # Go back to main UI
-        self.add_to_history(0)  # Add main UI to history
 
 
     def set_background_image(self, image_path=None):
@@ -2546,9 +2560,12 @@ class LoginSignupApp(QWidget):
                 }
             """)
 
-
-
-
+    def logout(self):
+        """Handle the logout process."""
+        self.current_user_id = None  # Clear the current user ID
+        self.login_feedback.setText("You have been logged out.")  # Optional feedback
+        self.central_widget.setCurrentIndex(0)  # Go back to the main UI (login/signup)
+        self.add_to_history(0)  # Add main UI to history
 
 if __name__ == "__main__":
 
