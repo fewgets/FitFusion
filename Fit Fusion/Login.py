@@ -30,7 +30,12 @@ import cv2
 import mediapipe as mp
 import numpy as np
 
+from Database import (login_database as supabase_login, signup_database as supabase_signup,
+                      streak_count_database as supabase_streak
+, reset_streak as supabase_streakReset, set_bmi_database as supabase_bmi, supabase)
+
 from PoseTracker import *
+
 class BMI:
     def __init__(self):
         self.weight_kg = 0.0
@@ -688,32 +693,28 @@ class LoginSignupApp(QWidget):
         self.login_feedback.setText("")  # Clear previous feedback
         self.login_database()
 
+
     def login_database(self):
-        """Check credentials in the database for login"""
+        """Check credentials in the Supabase database for login"""
         email = self.login_email.text().strip()
         password = self.login_password.text().strip()
 
         try:
-            conn = sqlite3.connect("1.db")
-            cur = conn.cursor()
-            cur.execute("SELECT id, name FROM test WHERE email=? AND password=?", (email, password))
-            row = cur.fetchone()  # Fetch a single record
-        except sqlite3.Error as e:
-            self.login_feedback.setStyleSheet("font-size: 25px; color: red;")
-            self.login_feedback.setText(f"Database error: {e}")
-            return
-        finally:
-            conn.close()  # Ensure the connection is closed
+            # Call the Supabase login function
+            result = supabase_login(email, password)
 
-        if row:
-            user_id, user_name = row  # Retrieve ID and name
-            self.current_user_id = user_id  # Store the user ID in an instance attribute
-            self.login_feedback.setStyleSheet("font-size: 25px; color: #0057B7;")
-            self.login_feedback.setText(f"Login successful. Welcome {user_name}!")
-            self.show_welcome_frame(user_name)  # Show welcome frame upon successful login
-        else:
-            self.login_feedback.setStyleSheet("font-size: 25px; color:#0057B7 ;")
-            self.login_feedback.setText("Account not recognized. Sign up")
+            if isinstance(result, str):  # If login is successful and a user ID is returned
+                self.current_user_id = result  # Store the user ID
+                self.login_feedback.setStyleSheet("font-size: 25px; color: #0057B7;")
+                self.login_feedback.setText(f"Login successful. Welcome User ID: {result}!")
+                self.show_welcome_frame(result)  # Show welcome frame upon successful login
+            else:
+                self.login_feedback.setStyleSheet("font-size: 25px; color: #0057B7;")
+                self.login_feedback.setText("Account not recognized. Please sign up.")
+        except Exception as e:
+            # Handle any exceptions from the Supabase login
+            self.login_feedback.setStyleSheet("font-size: 25px; color: red;")
+            self.login_feedback.setText(f"Login failed. Error: {e}")
 
     def open_forgot_password_window(self, event):
         """Open the forgot password dialog"""
@@ -842,39 +843,15 @@ class LoginSignupApp(QWidget):
         layout.addStretch(1)
 
         self.central_widget.addWidget(login_widget)
+
     def initialize_database(self):
-        """Ensure the database schema is up to date"""
-        conn = sqlite3.connect("1.db")
-        cur = conn.cursor()
-
-        # Check the schema of the 'streaks' table
-        cur.execute("PRAGMA table_info(streaks)")
-        schema_info = cur.fetchall()
-        print("Current schema of streaks table:")
-        for column in schema_info:
-            print(column)
-
-        def column_exists(table, column):
-            cur.execute(f"PRAGMA table_info({table})")
-            return any(row[1] == column for row in cur.fetchall())
-
-        # Ensure the 'streak_count' column exists
-        if not column_exists('streaks', 'streak_count'):
-            print("Adding column: streak_count")
-            cur.execute("ALTER TABLE streaks ADD COLUMN streak_count INTEGER DEFAULT 0")
-
-        # Ensure the 'current_streak' column exists
-        if not column_exists('streaks', 'current_streak'):
-            print("Adding column: current_streak")
-            cur.execute("ALTER TABLE streaks ADD COLUMN current_streak INTEGER DEFAULT 0")
-
-        # Ensure the 'longest_streak' column exists
-        if not column_exists('streaks', 'longest_streak'):
-            print("Adding column: longest_streak")
-            cur.execute("ALTER TABLE streaks ADD COLUMN longest_streak INTEGER DEFAULT 0")
-
-        conn.commit()
-        conn.close()
+        """Test Supabase connection and streak table availability."""
+        try:
+            # Check if the 'streaks' table exists
+            response = supabase.table('streaks').select('*').limit(1).execute()
+            print("Supabase connection successful. Streaks table is available.")
+        except Exception as e:
+            print(f"Error connecting to Supabase: {e}")
 
     def init_signup_ui(self):
         # Signup UI
@@ -1041,8 +1018,10 @@ class LoginSignupApp(QWidget):
             self.signup_feedback.setText("")
             self.signup_database()
 
+    from Database import signup_database as supabase_signup  # Import the Supabase signup function
+
     def signup_database(self):
-        """Handle database actions for signup"""
+        """Handle Supabase-based actions for signup"""
         name = self.signup_name.text().strip()
         email = self.signup_email.text().strip()
         password = self.signup_password.text().strip()
@@ -1053,79 +1032,27 @@ class LoginSignupApp(QWidget):
             return
 
         try:
-            conn = sqlite3.connect("1.db")
-            cur = conn.cursor()
+            # Call the Supabase signup function
+            result = supabase_signup(email, password, name)
 
-            # Ensure the 'test' table exists for users (if not, it gets created)
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS test (
-                    id INTEGER PRIMARY KEY, 
-                    name TEXT, 
-                    email TEXT, 
-                    password TEXT
-                )
-            """)
+            if "Signup successful" in result:
+                # If signup is successful, clear inputs and provide feedback
+                self.signup_feedback.setStyleSheet("font-size: 25px; color: #0057B7;")
+                self.signup_feedback.setText(result)
+                self.signup_name.clear()
+                self.signup_email.clear()
+                self.signup_password.clear()
+                self.central_widget.setCurrentIndex(0)  # Go back to the main UI
+                self.add_to_history(0)  # Add main UI to history
+            else:
+                # If signup fails, display the error message
+                self.signup_feedback.setStyleSheet("font-size: 25px; color: red;")
+                self.signup_feedback.setText(result)
 
-            # Check if the user already exists by email
-            cur.execute("SELECT id FROM test WHERE email = ?", (email,))
-            existing_user = cur.fetchone()
-            if existing_user:
-                self.signup_feedback.setText("Account already exists with this email.")
-                return  # If user exists, stop further processing
-
-            # Add the new user to the 'test' table
-            cur.execute("INSERT INTO test (name, email, password) VALUES (?, ?, ?)", (name, email, password))
-
-            # Get the user ID of the newly inserted user
-            user_id = cur.lastrowid
-
-            # Check if the 'streaks' table exists, and create it if it doesn't
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS streaks (
-                    user_id INTEGER PRIMARY KEY,
-                    last_active_date TEXT,
-                    streak_count INTEGER,
-                    current_streak INTEGER,
-                    longest_streak INTEGER,
-                    FOREIGN KEY(user_id) REFERENCES test(id)
-                )
-            """)
-
-            # Function to check if a column exists in the streaks table
-            def column_exists(table, column):
-                cur.execute(f"PRAGMA table_info({table})")
-                return any(row[1] == column for row in cur.fetchall())
-
-            # Ensure the required columns exist in the 'streaks' table (add if missing)
-            if not column_exists('streaks', 'last_active_date'):
-                cur.execute("ALTER TABLE streaks ADD COLUMN last_active_date TEXT")
-            if not column_exists('streaks', 'current_streak'):
-                cur.execute("ALTER TABLE streaks ADD COLUMN current_streak INTEGER DEFAULT 0")
-            if not column_exists('streaks', 'longest_streak'):
-                cur.execute("ALTER TABLE streaks ADD COLUMN longest_streak INTEGER DEFAULT 0")
-
-            # Initialize the streak for the new user
-            cur.execute("""
-                INSERT INTO streaks (user_id, last_active_date, streak_count, current_streak, longest_streak)
-                VALUES (?, ?, ?, ?, ?)
-            """, (user_id, datetime.datetime.today().date().isoformat(), 0, 0, 0))
-
-            conn.commit()
-
-            # Provide feedback that the account was created successfully
-            self.signup_feedback.setText("Account created successfully!")
-            self.signup_name.clear()
-            self.signup_email.clear()
-            self.signup_password.clear()
-            self.central_widget.setCurrentIndex(0)  # Go back to the main UI
-            self.add_to_history(0)  # Add main UI to history
-
-        except sqlite3.Error as e:
-            # In case of an error with the database, show the error message
-            self.signup_feedback.setText(f"Database error: {e}")
-        finally:
-            conn.close()
-
+        except Exception as e:
+            # Handle unexpected errors
+            self.signup_feedback.setStyleSheet("font-size: 25px; color: red;")
+            self.signup_feedback.setText(f"An error occurred: {e}")
 
     def init_welcome_ui(self):
         """Show a welcome frame after successful login"""
@@ -1711,7 +1638,7 @@ class LoginSignupApp(QWidget):
             self._streak_signal_connected = True  # Prevent re-connecting the signal
 
     def update_streak_progress(self):
-        """Update the streak progress display in the Streak tab."""
+        """Update the streak progress display in the Streak tab using Supabase."""
         if self.tabs.tabText(self.tabs.currentIndex()) != "Streak":
             return  # Not the streak tab, ignore
 
@@ -1721,118 +1648,102 @@ class LoginSignupApp(QWidget):
             return
 
         try:
-            conn = sqlite3.connect("1.db")
-            cur = conn.cursor()
-
-            # Ensure streaks table exists
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS streaks (
-                    user_id TEXT PRIMARY KEY,
-                    last_active_date TEXT,
-                    streak_count INTEGER,
-                    current_streak INTEGER,
-                    longest_streak INTEGER
-                )
-            """)
-
             # Fetch streak data for the current user
-            today = datetime.datetime.today().date().isoformat()
-            cur.execute(
-                "SELECT last_active_date, streak_count, current_streak, longest_streak FROM streaks WHERE user_id = ?",
-                (user_id,))
-            result = cur.fetchone()
-            if result:
-                _, streak_count, current_streak, longest_streak = result
-                streak_text = f"Total Streak: {streak_count} days\n" \
-                              f"Current Streak: {current_streak} days\n" \
-                              f"Longest Streak: {longest_streak} days"
+            response = supabase.table('streaks').select('streak_count', 'last_streak_date').eq('user_id',
+                                                                                               user_id).execute()
 
-                # Set the text in the label
-                self.streak_progress_label.setText(streak_text)
+            if response.data:
+                streak_data = response.data[0]
+                streak_count = streak_data['streak_count']
 
-                # Adjust width to the text and ensure it fits dynamically
-                self.streak_progress_label.setFixedWidth(self.streak_progress_label.sizeHint().width())
-
-                # Apply the box around the streak data with styles to make it bigger
-                self.streak_progress_label.setStyleSheet("""
-                            font-size: 18px;  /* Larger font size for better visibility */
-                            color: #0057B7;  /* Dark Blue text */
-                            background-color: #E0FFFF;  /* Very Light Blue background */
-                            padding: 20px;  /* Increase padding inside the box for a larger box */
-                            border: 3px solid #0057B7;  /* Dark Blue border with slightly thicker border */
-                            border-radius: 10px;  /* More rounded corners for a smoother look */
-                            text-align: center;  /* Center the text within the box */
-                            margin: 0 auto;  /* Center the label horizontally within its container */
-                            min-width: 300px;  /* Set a minimum width to make the box wider */
-                        """)
-
-                # Center the box in the middle of the screen using layout
-                layout = QVBoxLayout()  # Create a new layout or use the existing one
-                layout.setAlignment(Qt.AlignCenter)  # Center the layout contents
-
-
+                self.current_streak_label.setText(f"Current Streak: {streak_count} Days")
+                self.streak_progress_bar.setValue(streak_count)
+                self.streak_progress_label.setText(f"Your current streak progress: {streak_count}/7 days")
             else:
-                # Handle first-time login for a user
-                cur.execute("""
-                    INSERT INTO streaks (user_id, last_active_date, streak_count, current_streak, longest_streak)
-                    VALUES (?, ?, 1, 1, 1)
-                """, (user_id, today))
-                conn.commit()
-                self.streak_progress_label.setText(
-                    "Total Streak: 1 day\nCurrent Streak: 1 day\nLongest Streak: 1 day"
-                )
-        except sqlite3.Error as e:
+                self.streak_progress_label.setText("No streak data available.")
+        except Exception as e:
             self.streak_progress_label.setText(f"Error fetching streak data: {e}")
-        finally:
-            conn.close()
 
     def update_streak(self, user_id):
-        """Update the streak for the user."""
-        conn = sqlite3.connect("1.db")
-        cur = conn.cursor()
-
+        """Update the user's streak in Supabase."""
         today = datetime.datetime.today().date().isoformat()
-        try:
-            cur.execute(
-                "SELECT last_active_date, streak_count, current_streak, longest_streak FROM streaks WHERE user_id = ?",
-                (user_id,))
-            result = cur.fetchone()
 
-            if result:
-                last_active_date, streak_count, current_streak, longest_streak = result
-                if last_active_date == today:
+        try:
+            # Fetch the current streak data
+            response = supabase.table('streaks').select(
+                'last_streak_date, streak_count, current_streak, longest_streak'
+            ).eq('user_id', user_id).execute()
+
+            if response.data:
+                streak_data = response.data[0]
+                last_streak_date = streak_data['last_streak_date']
+                streak_count = streak_data['streak_count']
+                current_streak = streak_data['current_streak']
+                longest_streak = streak_data['longest_streak']
+
+                if last_streak_date == today:
                     return  # No update needed
-                elif last_active_date == (datetime.datetime.today() - datetime.timedelta(days=1)).date().isoformat():
+                elif last_streak_date == (datetime.datetime.today() - datetime.timedelta(days=1)).date().isoformat():
                     streak_count += 1
                     current_streak += 1
                 else:
-                    streak_count = 1
-                    current_streak = 1
+                    current_streak = 1  # Reset current streak
+                    streak_count += 1
 
                 if current_streak > longest_streak:
                     longest_streak = current_streak
 
-                cur.execute("""
-                    UPDATE streaks
-                    SET last_active_date = ?, streak_count = ?, current_streak = ?, longest_streak = ?
-                    WHERE user_id = ?
-                """, (today, streak_count, current_streak, longest_streak, user_id))
+                # Update the streak in Supabase
+                supabase.table('streaks').update({
+                    'last_streak_date': today,
+                    'streak_count': streak_count,
+                    'current_streak': current_streak,
+                    'longest_streak': longest_streak
+                }).eq('user_id', user_id).execute()
             else:
-                cur.execute("""
-                    INSERT INTO streaks (user_id, last_active_date, streak_count, current_streak, longest_streak)
-                    VALUES (?, ?, 1, 1, 1)
-                """, (user_id, today))
+                # Insert a new streak entry for the user
+                supabase.table('streaks').insert({
+                    'user_id': user_id,
+                    'last_streak_date': today,
+                    'streak_count': 1,
+                    'current_streak': 1,
+                    'longest_streak': 1
+                }).execute()
 
-            conn.commit()
-        except sqlite3.Error as e:
-            print(f"Database error while updating streak: {e}")
-        finally:
-            conn.close()
+        except Exception as e:
+            print(f"Error updating streak: {e}")
+
+    def display_streak_data(self, streak_data):
+        """Update UI elements with streak data."""
+        current_streak = streak_data['current_streak']
+        longest_streak = streak_data['longest_streak']
+        streak_count = streak_data['streak_count']
+
+        self.current_streak_label.setText(f"Current Streak: {current_streak} Days")
+        self.longest_streak_label.setText(f"Longest Streak: {longest_streak} Days")
+        self.streak_progress_bar.setValue(current_streak)
+
+    def initialize_user_streak(self, user_id):
+        """Initialize a new streak for the user."""
+        today = datetime.datetime.today().date().isoformat()
+        supabase.table('streaks').insert({
+            'user_id': user_id,
+            'last_streak_date': today,
+            'streak_count': 1,
+            'current_streak': 1,
+            'longest_streak': 1
+        }).execute()
+        self.streak_progress_label.setText(
+            "Total Streak: 1 day\nCurrent Streak: 1 day\nLongest Streak: 1 day"
+        )
+        self.streak_progress_bar.setValue(1)
 
     def get_current_user_id(self):
         user_id = getattr(self, 'current_user_id', None)
         print(f"get_current_user_id() returned: {user_id}")
         return user_id
+
+    from Database import set_bmi_database  # Import the function to update BMI in Supabase
 
     def create_bmi_visualization_tab(self):
         bmi_tab = QWidget()
@@ -1857,9 +1768,8 @@ class LoginSignupApp(QWidget):
         self.weight_input.setStyleSheet("""
             font-size: 16px;
             padding: 5px;
-            height: 30px;              /* Adjusted height for consistency */
-                 color: #0057B7;            /* Dark Blue Text */
-            border: 2px solid #0057B7; /* Dark Blue Border */
+            color: #0057B7;  /* Dark Blue Text */
+            border: 2px solid #0057B7;  /* Dark Blue Border */
             background-color: #E0FFFF;  /* Very Light Blue */
             border-radius: 5px;
             margin-bottom: 10px;
@@ -1872,9 +1782,8 @@ class LoginSignupApp(QWidget):
         self.height_input.setStyleSheet("""
             font-size: 16px;
             padding: 5px;
-            height: 30px;              /* Adjusted height for consistency */
-                 color: #0057B7;            /* Dark Blue Text */
-            border: 2px solid #0057B7; /* Dark Blue Border */
+            color: #0057B7;  /* Dark Blue Text */
+            border: 2px solid #0057B7;  /* Dark Blue Border */
             background-color: #E0FFFF;  /* Very Light Blue */
             border-radius: 5px;
             margin-bottom: 10px;
@@ -1885,19 +1794,18 @@ class LoginSignupApp(QWidget):
         self.age_input = QLineEdit(self)
         self.age_input.setPlaceholderText("Age")
         self.age_input.setStyleSheet("""
-             color: #0057B7;            /* Dark Blue Text */
-            border: 2px solid #0057B7; /* Dark Blue Border */
-            background-color: #E0FFFF;  /* Very Light Blue */
             font-size: 16px;
             padding: 5px;
-            height: 30px;              /* Adjusted height for consistency */
+            color: #0057B7;  /* Dark Blue Text */
+            border: 2px solid #0057B7;  /* Dark Blue Border */
+            background-color: #E0FFFF;  /* Very Light Blue */
             border-radius: 5px;
             margin-bottom: 10px;
         """)
         layout.addWidget(self.age_input)
 
         # Calculate BMI Button
-        calculate_button = QPushButton("Calculate BMI", self)
+        calculate_button = QPushButton("Calculate & Save BMI", self)
         calculate_button.setStyleSheet("""
             QPushButton {
                 background-color: #0057B7;  /* Dark Blue Background */
@@ -1910,7 +1818,7 @@ class LoginSignupApp(QWidget):
                 background-color: #003C88;  /* Darker Blue on Hover */
             }
         """)
-        calculate_button.clicked.connect(self.calculate_bmi)
+        calculate_button.clicked.connect(self.calculate_and_save_bmi)  # Updated to include Supabase integration
         layout.addWidget(calculate_button)
 
         # BMI Output
@@ -1925,38 +1833,46 @@ class LoginSignupApp(QWidget):
             padding: 5px;
             border: 2px solid #0057B7; /* Dark Blue Border */
             border-radius: 5px;
-            height: 30px;
             margin-top: 10px;
-            margin-bottom: 10px;
         """)
         layout.addWidget(self.bmi_output)
 
         # Canvas for Plotting BMI Visualization
-        self.canvas = FigureCanvas(Figure(figsize=(6, 6)))  # Adjusted canvas size for better fitting
-        self.canvas.setStyleSheet("""
-            border: 2px solid #0057B7;  /* Dark Blue Border */
-            border-radius: 10px;
-            background-color: #E0FFFF; /* Very Light Blue Background */
-        """)
+        self.canvas = FigureCanvas(Figure(figsize=(6, 6)))
         layout.addWidget(self.canvas)
 
         # Add the BMI Tab
         self.tabs.addTab(bmi_tab, "BMI")
 
-    def calculate_bmi(self):
+    def calculate_and_save_bmi(self):
         try:
+            # Get user inputs
             weight = float(self.weight_input.text())
-            height = float(self.height_input.text())
+            height_cm = float(self.height_input.text())
             age = int(self.age_input.text())
+            user_id = self.current_user_id  # Assuming the user is logged in
 
-            bmi_metric = BMIMetric(weight, height, age)
-            bmi_value = bmi_metric.calculate_bmi()
-            bmi_category = bmi_metric.get_bmi_category(bmi_value)
+            # Convert height to meters and calculate BMI
+            height_m = height_cm / 100
+            bmi_value = weight / (height_m ** 2)
 
-            # Display the BMI value and category in the text field
+            # Determine BMI category
+            if bmi_value < 18.5:
+                bmi_category = "Underweight"
+            elif 18.5 <= bmi_value <= 24.9:
+                bmi_category = "Normal weight"
+            elif 25.0 <= bmi_value <= 29.9:
+                bmi_category = "Overweight"
+            else:
+                bmi_category = "Obesity"
+
+            # Display BMI value and category
             self.bmi_output.setText(f"BMI Value: {bmi_value:.2f}, Category: {bmi_category}")
 
-            # Plot the BMI value
+            # Save BMI to Supabase
+            supabase_bmi(user_id, age, height_m, weight, bmi_value)
+
+            # Plot the BMI
             self.plot_bmi(bmi_value, bmi_category)
 
         except ValueError:
