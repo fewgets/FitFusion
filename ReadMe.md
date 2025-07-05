@@ -1,114 +1,129 @@
-# 🌟 **FitFusion: Redefine Your Fitness Journey** 🌟  
+# 🏋️‍♂️ FitFusion: AI Fitness Tracker with Pose & Diet Intelligence
 
-**FitFusion** is your all-in-one AI-powered fitness companion. Whether you're starting your journey or leveling up, FitFusion is here to guide, track, and motivate you with intuitive tools and personalized insights. Let's get stronger together! 💪  
-
----
-
-## 🚀 **Why Choose FitFusion?**  
-
-### 🧑‍💻 **Seamless User Management**
-- **🔒 Secure Login & Signup**: Your data is protected with cutting-edge [Supabase](https://supabase.com) technology.  
-- **📧 Hassle-Free Email Verification**: Stay secure and verified.  
-
-### 🏋️‍♂️ **Advanced Fitness Tools**
-- **📹 Real-Time Pose Tracker**: Analyze your form for exercises like:  
-  - 🏋️ **Biceps Curls**  
-  - 🧎 **Squats**  
-  - 🤸 **Push-Ups**  
-  - 🪷 **Planks**  
-- **📊 Workout Planner**: Receive tailored exercise plans based on your muscle group and goals.  
-
-### 🥗 **AI-Driven Nutrition**
-- Generate **delicious, healthy meal plans** using:  
-  - [Spoonacular API](https://spoonacular.com/food-api)  
-  - Gemini AI for smart and creative suggestions when needed.  
-
-### 📈 **Comprehensive Progress Tracking**
-- **🔥 Streak Tracking**: Build habits and maintain consistency effortlessly.  
-- **📉 BMI Visualizer**: Track your BMI changes and visualize your health journey over time.  
-
----
-## 🛠 **Installation Guide**  
-
-### 🌐 Prerequisites  
-Before you start, ensure you have:  
-- **Python** ≥ 3.8  
-- [Pip](https://pip.pypa.io/en/stable/installation/) for managing dependencies.  
-
-### ⚙️ Setup Instructions  
-1. Clone the FitFusion repository:  
-   ```bash
-   git clone https://github.com/your-username/fitfusion.git
-   cd fitfusion
-   ```  
-
-2. Install the required Python packages:  
-   ```bash
-   pip install -r requirements.txt
-   ```  
-
-3. Set up your API keys:  
-   - Open `Database.py` and configure **Supabase** credentials.  
-   - Update `Login.py` with your **Gemini AI** and **Spoonacular API** keys.  
-
-4. Launch FitFusion:  
-   ```bash
-   python Login.py
-   ```  
+> An AI-powered desktop app to analyze workout posture, suggest custom meal plans, and track progress — all in one place.
 
 ---
 
-## 🛠 **Technologies That Power FitFusion**  
+## 📌 Project Summary
 
-| **Technology**       | **Purpose**                          |  
-|-----------------------|--------------------------------------|  
-| **Python**            | Core language for backend and logic |  
-| **PyQt5**             | User-friendly graphical interface   |  
-| **OpenCV & Mediapipe**| Real-time pose tracking             |  
-| **Matplotlib**        | Interactive BMI visualizations      |  
-| **Supabase**          | Authentication and database storage |  
+FitFusion is a desktop-based fitness assistant that combines:
 
----
+1. **Pose Detection for Form Correction** using Mediapipe + OpenCV
 
-## 🌟 **How It Works**  
+   * 🎥 Tracks keypoints for exercises like push-ups, planks, squats, etc.
+   * 🧠 Gives posture-based rep count & real-time correction feedback
 
-### 🔍 **Pose Tracker**
-- Leverages Mediapipe to track key body points.  
-- Delivers real-time feedback for exercises like squats, push-ups, and planks.  
+2. **AI-Powered Meal Planning**
 
-### 💡 **AI Meal & Workout Assistance**
-- Get meal suggestions based on calorie requirements and preferences.  
-- Plan workouts with exercises tailored to your muscle group goals.  
+   * 🍽️ Uses Gemini AI + Spoonacular API
+   * 📊 Generates meal plans based on calorie requirements and user preferences
 
-### 📊 **Health Monitoring**
-- Calculate your BMI using height, weight, and age.  
-- Store historical data and view progress graphs to stay on track.  
+3. **User Management + Progress Tracking**
+
+   * 🔒 Signup/Login with Supabase auth
+   * 🔥 Track workout streaks and visualize BMI changes over time
 
 ---
 
-## 🤝 **Contribute to FitFusion**  
+## 🧠 How it Works
 
-We believe collaboration makes great things even better! 💖  
+### 🔍 Pose Detection
 
-### How to Contribute:  
-1. **Fork the repository.**  
-2. **Create a feature branch:**  
-   ```bash
-   git checkout -b feature-name
-   ```  
-3. **Commit your changes** and push them to your fork:  
-   ```bash
-   git push origin feature-name
-   ```  
-4. **Submit a pull request** and let’s improve FitFusion together!  
+* Live camera stream analyzed via Mediapipe Pose model
+* Calculates angles & form to verify posture
+* Reps auto-counted if pose is correct
+
+### 🧪 AI Meal Suggestions
+
+* Users input preferences (veg/non-veg, allergies, calories)
+* Gemini AI + Spoonacular API returns full-day meal plan
+
+### 📈 Progress Features
+
+* BMI calculator & visualizer (via matplotlib)
+* Weekly streak history stored in Supabase DB
 
 ---
 
-## 🌐 **Stay Connected with FitFusion**  
+## 🧰 Tech Stack
 
-Follow us on social media for updates, tips, and fitness inspiration:  
-- **Twitter**: [@fitfusion](https://twitter.com/fitfusion)  
-- **Instagram**: [@fitfusion](https://instagram.com/fitfusion)  
-- **Facebook**: [@fitfusion](https://facebook.com/fitfusion)  
+| Category        | Tools / Frameworks         |
+| --------------- | -------------------------- |
+| Language        | Python 3.10+               |
+| Interface       | PyQt5                      |
+| Pose Estimation | OpenCV, Mediapipe          |
+| AI Meal Plans   | Gemini AI, Spoonacular API |
+| Data Storage    | Supabase (Auth + Database) |
+| Charts          | Matplotlib                 |
+
+---
+
+---
+
+## ⚙️ How to Run the Project
+
+### 🔧 1. Clone the Repository
+
+```bash
+git clone https://github.com/your-username/FitFusion.git
+cd FitFusion
+```
+
+### 🔧 2. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 🔧 3. Set API Keys
+
+* In `Database.py`, enter Supabase credentials
+* In `meal_planner.py`, set Gemini + Spoonacular API keys
+
+### 🚀 4. Run the App
+
+```bash
+python Login.py
+```
+
+---
+
+## ✨ Features
+
+* ✅ Real-time form correction and rep counting
+* ✅ Smart meal plans based on dietary needs
+* ✅ Visual BMI progress graphs
+* ✅ User login, streaks, and habit tracker
+
+---
+
+## 🔮 Future Plans
+
+* 🗣️ Add voice-guided workouts and assistant
+* 📱 Launch mobile version (Android/iOS)
+* 🌍 Include regional/local meal options
+* 🏆 Fitness leaderboard and community challenge system
+* ☁️ Cloud sync and backup of progress data
+
+---
+
+## 📩 Contact
+
+👤 **Usama Shaikh**
+📧 Email: [shaikhusama541@gmail.com](mailto:shaikhusama541@gmail.com)
+📞 Phone: +92 334 2366009
+
+Feel free to reach out for:
+
+* 🤝 Collaboration or code queries
+* 💬 Troubleshooting or improvement ideas
+* 🎯 Customizations or contributions
+
+---
+
+## 📜 License
+
+This project is released under the **MIT License**.
+You may reuse, modify, or build upon this work — just give credit. 🙏
 
 ---
