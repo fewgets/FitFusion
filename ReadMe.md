@@ -123,7 +123,6 @@ Feel free to reach out for:
 
 ## 📜 License
 
-This project is released under the **MIT License**.
-You may reuse, modify, or build upon this work — just give credit. 🙏
+This project is for academic and research purposes only. Feel free to fork, reference, and learn - but give credit where due 🙏
 
 ---
