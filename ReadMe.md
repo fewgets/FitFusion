@@ -109,9 +109,8 @@ python Login.py
 
 ## 📩 Contact
 
-👤 **Usama Shaikh**
+👤 **Usama Shahid**
 📧 Email: [shaikhusama541@gmail.com](mailto:shaikhusama541@gmail.com)
-📞 Phone: +92 334 2366009
 
 Feel free to reach out for:
 
