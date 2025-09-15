@@ -1,4 +1,4 @@
-import google.generativeai as genai
+import google.generativeai as genai 
 import speech_recognition as sr
 import webbrowser
 import re
