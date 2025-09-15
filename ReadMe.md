@@ -110,7 +110,7 @@ python Login.py
 ## 📩 Contact
 
 👤 **Usama Shahid**
-📧 Email: [shaikhusama541@gmail.com](mailto:shaikhusama541@gmail.com)
+📧 Email: [dev.usamashahid@gmail.com](mailto:dev.usamashahid@gmail.com)
 
 Feel free to reach out for:
 
