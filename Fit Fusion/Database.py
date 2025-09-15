@@ -1,5 +1,4 @@
 from datetime import datetime
-
 from supabase import create_client
 
 # Supabase project URL and secret key
