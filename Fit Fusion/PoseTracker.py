@@ -3,7 +3,6 @@ import mediapipe as mp
 import numpy as np
 from mediapipe.python.solutions import pose
 
-
 def calculate_angle(a, b, c):
     a = np.array(a)
     b = np.array(b)
